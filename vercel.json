@@ -1,0 +1,16 @@
+{
+  "buildCommand": "prisma generate && prisma migrate deploy && next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["lhr1"],
+  "env": {
+    "DATABASE_URL": "@database-url",
+    "JWT_SECRET": "@jwt-secret",
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "@google-maps-key",
+    "STRIPE_SECRET_KEY": "@stripe-secret",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe-publishable",
+    "TWILIO_ACCOUNT_SID": "@twilio-sid",
+    "TWILIO_AUTH_TOKEN": "@twilio-token",
+    "TWILIO_PHONE_NUMBER": "@twilio-phone"
+  }
+}

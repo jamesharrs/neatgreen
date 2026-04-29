@@ -1,0 +1,2516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat Green — Smart Lawn Care</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="shortcut icon" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>
+  // Replace with your actual key — already in .env as NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  window.GMAPS_KEY = 'AIzaSyDOwNwbLlaKC97IH6yyceAOFnODf70fK14';
+</script>
+<style>
+  :root {
+    --green-deep: #0d3d1e;
+    --green-mid: #1a6b35;
+    --green-bright: #2dba60;
+    --green-light: #b6f5ce;
+    --green-pale: #edfaf3;
+    --cream: #f9f7f2;
+    --ink: #0a1a0f;
+    --ink-light: #3d5447;
+    --white: #ffffff;
+    --accent: #e8ff5a;
+    --warn: #ff6b35;
+    --border: #d4e8da;
+    --shadow: 0 4px 24px rgba(13,61,30,0.10);
+    --shadow-lg: 0 12px 48px rgba(13,61,30,0.16);
+    --r: 16px;
+    --r-sm: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+  p { line-height: 1.65; }
+  small, .small { font-size: 13px; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px;
+    height: 68px;
+    background: rgba(249,247,242,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800; font-size: 22px;
+    color: var(--green-deep);
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer;
+  }
+  .nav-logo span { color: var(--green-bright); }
+  .nav-logo .leaf {
+    width: 28px; height: 28px;
+    background: var(--green-bright);
+    border-radius: 50% 50% 50% 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 14px;
+  }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 8px 18px;
+    border-radius: 99px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none;
+    background: transparent; color: var(--ink-light);
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { background: var(--green-pale); color: var(--green-deep); }
+  .nav-tab.active { background: var(--green-deep); color: white; }
+  .nav-cta {
+    background: var(--accent); color: var(--green-deep);
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;
+    font-size: 14px; padding: 10px 22px;
+    border-radius: 99px; border: none; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,255,90,0.5); }
+
+  /* ── PAGES ── */
+  .page { display: none; padding-top: 68px; min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ══════════════════════════════════════
+     CUSTOMER LANDING PAGE
+  ══════════════════════════════════════ */
+  .hero {
+    min-height: calc(100vh - 68px);
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0; position: relative; overflow: hidden;
+  }
+  .hero-left {
+    padding: 80px 60px 80px 60px;
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative; z-index: 2;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--green-pale); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 99px;
+    font-size: 13px; color: var(--green-mid); font-weight: 500;
+    margin-bottom: 28px; width: fit-content;
+  }
+  .hero-badge::before { content: ''; width: 6px; height: 6px; background: var(--green-bright); border-radius: 50%; }
+  .hero h1 {
+    font-size: clamp(42px, 5vw, 64px);
+    font-weight: 800; line-height: 1.05;
+    color: var(--green-deep);
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+  }
+  .hero h1 em { font-style: normal; color: var(--green-bright); }
+  .hero-sub {
+    font-size: 18px; color: var(--ink-light); line-height: 1.6;
+    max-width: 440px; margin-bottom: 40px; font-weight: 300;
+  }
+  .hero-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--green-deep); color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;
+    font-size: 16px; padding: 16px 32px;
+    border-radius: 99px; border: none; cursor: pointer;
+    transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:hover { background: var(--green-mid); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .btn-secondary {
+    background: transparent; color: var(--green-deep);
+    font-family: 'Inter', sans-serif; font-weight: 500;
+    font-size: 15px; padding: 16px 24px;
+    border-radius: 99px; border: 2px solid var(--border);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--green-bright); color: var(--green-mid); }
+  .hero-stats {
+    display: flex; gap: 32px; margin-top: 52px;
+    padding-top: 32px; border-top: 1px solid var(--border);
+  }
+  .stat { }
+  .stat-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 28px; font-weight: 800; color: var(--green-deep); }
+  .stat-label { font-size: 13px; color: var(--ink-light); margin-top: 2px; }
+
+  .hero-right {
+    background: var(--green-deep);
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 50px; position: relative; overflow: hidden;
+  }
+  .hero-right::before {
+    content: '';
+    position: absolute; top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    background: var(--green-bright); opacity: 0.12;
+    border-radius: 50%;
+  }
+  .hero-right::after {
+    content: '';
+    position: absolute; bottom: -80px; left: -40px;
+    width: 240px; height: 240px;
+    background: var(--accent); opacity: 0.08;
+    border-radius: 50%;
+  }
+
+  /* ── BOOKING CARD ── */
+  .booking-card {
+    background: white; border-radius: 24px;
+    padding: 36px; width: 100%; max-width: 420px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+    position: relative; z-index: 2;
+  }
+  .booking-card h3 {
+    font-size: 22px; font-weight: 800; color: var(--green-deep);
+    margin-bottom: 6px;
+  }
+  .booking-card p { font-size: 14px; color: var(--ink-light); margin-bottom: 28px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--ink-light); letter-spacing: 0.6px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .form-input, .form-select {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    font-family: 'Inter', sans-serif; font-size: 15px;
+    color: var(--ink); background: var(--cream);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none; appearance: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--green-bright);
+    box-shadow: 0 0 0 3px rgba(45,186,96,0.12);
+    background: white;
+  }
+  .size-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .size-pill {
+    flex: 1; min-width: 80px; padding: 10px 8px;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: var(--cream);
+  }
+  .size-pill .pill-label { font-size: 11px; color: var(--ink-light); display: block; }
+  .size-pill .pill-price { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--green-deep); }
+  .size-pill:hover, .size-pill.selected {
+    border-color: var(--green-bright);
+    background: var(--green-pale);
+  }
+  .size-pill.selected .pill-price { color: var(--green-mid); }
+  .freq-pills { display: flex; gap: 8px; }
+  .freq-pill {
+    flex: 1; padding: 10px 6px; text-align: center;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    cursor: pointer; transition: all 0.2s; background: var(--cream);
+    font-size: 13px; font-weight: 500; color: var(--ink-light);
+  }
+  .freq-pill:hover, .freq-pill.selected {
+    border-color: var(--green-bright); background: var(--green-pale); color: var(--green-deep);
+  }
+  .price-summary {
+    background: var(--green-pale); border-radius: var(--r-sm);
+    padding: 16px; margin: 20px 0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .price-label { font-size: 13px; color: var(--ink-light); }
+  .price-amount { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; color: var(--green-deep); }
+  .price-per { font-size: 12px; color: var(--ink-light); }
+  .btn-book {
+    width: 100%; background: var(--green-bright); color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 16px;
+    padding: 16px; border-radius: var(--r-sm); border: none;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-book:hover { background: var(--green-mid); transform: translateY(-1px); }
+  .booking-trust {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; margin-top: 14px;
+    font-size: 12px; color: var(--ink-light);
+  }
+
+  /* ── HOW IT WORKS ── */
+  .section { padding: 100px 60px; }
+  .section-inner { max-width: 1140px; margin: 0 auto; }
+  .section-tag {
+    display: inline-block; background: var(--green-pale);
+    color: var(--green-mid); font-size: 12px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 99px; margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: clamp(32px, 4vw, 48px); font-weight: 800;
+    color: var(--green-deep); letter-spacing: -1px; line-height: 1.1;
+    margin-bottom: 60px; max-width: 600px;
+  }
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .step-card {
+    background: white; border-radius: 20px; padding: 36px 32px;
+    border: 1px solid var(--border); position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .step-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .step-num {
+    width: 48px; height: 48px;
+    background: var(--green-deep); color: var(--accent);
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800;
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px;
+  }
+  .step-icon { font-size: 32px; margin-bottom: 16px; }
+  .step-card h4 { font-size: 20px; font-weight: 700; margin-bottom: 10px; color: var(--green-deep); }
+  .step-card p { font-size: 15px; color: var(--ink-light); line-height: 1.6; }
+
+  /* ── PRICING STRIP ── */
+  .pricing-strip {
+    background: var(--green-deep); padding: 80px 60px;
+  }
+  .pricing-inner { max-width: 1140px; margin: 0 auto; }
+  .pricing-title { font-size: 42px; font-weight: 800; color: white; margin-bottom: 10px; }
+  .pricing-sub { color: var(--green-light); opacity: 0.7; font-size: 16px; margin-bottom: 48px; }
+  .pricing-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .pricing-card {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px; padding: 28px 24px; text-align: center;
+    transition: all 0.2s; cursor: pointer;
+  }
+  .pricing-card:hover, .pricing-card.featured {
+    background: rgba(255,255,255,0.13); border-color: var(--green-bright);
+  }
+  .pricing-card.featured { position: relative; }
+  .featured-tag {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: var(--green-deep);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 4px 12px; border-radius: 99px; white-space: nowrap;
+  }
+  .pricing-size { color: var(--green-light); font-size: 14px; margin-bottom: 8px; opacity: 0.8; }
+  .pricing-price { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 36px; font-weight: 800; color: white; }
+  .pricing-price sup { font-size: 18px; vertical-align: top; margin-top: 6px; }
+  .pricing-desc { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; }
+  .pricing-card .btn-book-sm {
+    margin-top: 20px; width: 100%; padding: 12px;
+    background: var(--green-bright); color: white;
+    border: none; border-radius: var(--r-sm); cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px;
+    transition: all 0.2s;
+  }
+  .pricing-card .btn-book-sm:hover { background: var(--green-mid); }
+
+  /* ══════════════════════════════════════
+     BOOKING FLOW PAGE
+  ══════════════════════════════════════ */
+  .booking-page {
+    max-width: 680px; margin: 0 auto;
+    padding: 60px 24px 120px;
+  }
+  .booking-page h2 { font-size: 36px; font-weight: 800; color: var(--green-deep); margin-bottom: 8px; }
+  .booking-page > p { color: var(--ink-light); margin-bottom: 40px; }
+  .progress-bar {
+    display: flex; gap: 6px; margin-bottom: 48px;
+  }
+  .progress-step {
+    flex: 1; height: 4px; border-radius: 99px;
+    background: var(--border); transition: background 0.3s;
+  }
+  .progress-step.done { background: var(--green-bright); }
+  .progress-step.active { background: var(--green-mid); }
+  .booking-step { display: none; animation: fadeUp 0.3s ease; }
+  .booking-step.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .step-title { font-size: 24px; font-weight: 700; color: var(--green-deep); margin-bottom: 24px; }
+  .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+  .option-card {
+    padding: 20px; border: 2px solid var(--border); border-radius: var(--r);
+    cursor: pointer; transition: all 0.2s; background: white;
+  }
+  .option-card:hover { border-color: var(--green-bright); background: var(--green-pale); }
+  .option-card.selected { border-color: var(--green-bright); background: var(--green-pale); }
+  .option-card .oc-icon { font-size: 28px; margin-bottom: 10px; }
+  .option-card .oc-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--green-deep); }
+  .option-card .oc-desc { font-size: 13px; color: var(--ink-light); margin-top: 4px; }
+  .option-card .oc-price { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; color: var(--green-mid); margin-top: 10px; }
+  .date-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 28px; }
+  .date-cell {
+    aspect-ratio: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border: 1.5px solid var(--border); border-radius: 12px;
+    cursor: pointer; transition: all 0.2s; background: white;
+    font-size: 12px;
+  }
+  .date-cell .dc-day { color: var(--ink-light); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .date-cell .dc-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; color: var(--green-deep); }
+  .date-cell:hover, .date-cell.selected {
+    border-color: var(--green-bright); background: var(--green-pale);
+  }
+  .date-cell.disabled { opacity: 0.35; cursor: not-allowed; }
+  .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
+  .time-slot {
+    padding: 14px; text-align: center;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    cursor: pointer; transition: all 0.2s; background: white;
+    font-weight: 500; font-size: 15px; color: var(--green-deep);
+  }
+  .time-slot:hover, .time-slot.selected { border-color: var(--green-bright); background: var(--green-pale); }
+  .time-slot.busy { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; }
+  .confirm-summary {
+    background: white; border: 1px solid var(--border);
+    border-radius: var(--r); padding: 28px; margin-bottom: 24px;
+  }
+  .confirm-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 15px;
+  }
+  .confirm-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .confirm-row .cr-label { color: var(--ink-light); }
+  .confirm-row .cr-value { font-weight: 600; color: var(--green-deep); }
+  .confirm-total { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; }
+  .step-nav { display: flex; gap: 12px; justify-content: space-between; margin-top: 8px; }
+  .btn-back {
+    padding: 14px 28px; border: 2px solid var(--border); border-radius: 99px;
+    background: transparent; color: var(--ink-light); cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--ink-light); }
+  .btn-next {
+    flex: 1; padding: 14px 28px; background: var(--green-deep); color: white;
+    border-radius: 99px; border: none; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn-next:hover { background: var(--green-mid); transform: translateY(-1px); }
+  .success-state {
+    text-align: center; padding: 60px 40px;
+  }
+  .success-icon {
+    width: 80px; height: 80px; background: var(--green-pale);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin: 0 auto 28px;
+    border: 3px solid var(--green-bright);
+  }
+  .success-state h3 { font-size: 30px; font-weight: 800; color: var(--green-deep); margin-bottom: 12px; }
+  .success-state p { color: var(--ink-light); font-size: 16px; line-height: 1.6; }
+  .booking-ref {
+    display: inline-block; margin-top: 24px; padding: 10px 20px;
+    background: var(--green-pale); border: 1px solid var(--border);
+    border-radius: var(--r-sm); font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700; color: var(--green-mid); font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  /* ══════════════════════════════════════
+     ADMIN DASHBOARD
+  ══════════════════════════════════════ */
+  #page-admin { background: #f0f4f1; }
+  .admin-layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 68px); }
+  .admin-sidebar {
+    background: var(--green-deep); padding: 32px 20px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sidebar-section-title {
+    font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 1.5px;
+    text-transform: uppercase; font-weight: 600;
+    padding: 0 12px; margin: 20px 0 8px;
+  }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 10px;
+    color: rgba(255,255,255,0.65); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .sidebar-item:hover { background: rgba(255,255,255,0.08); color: white; }
+  .sidebar-item.active { background: rgba(255,255,255,0.12); color: white; }
+  .sidebar-item .si-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-badge {
+    margin-left: auto; background: var(--green-bright); color: white;
+    font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 99px;
+  }
+  .admin-main { padding: 36px 40px; overflow-y: auto; }
+  .admin-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+  .admin-header h2 { font-size: 28px; font-weight: 800; color: var(--green-deep); }
+  .admin-header p { font-size: 14px; color: var(--ink-light); margin-top: 4px; }
+  .admin-date { font-size: 13px; color: var(--ink-light); background: white; padding: 8px 16px; border-radius: 99px; border: 1px solid var(--border); }
+
+  /* KPI cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 32px; }
+  .kpi-card {
+    background: white; border-radius: var(--r); padding: 24px;
+    border: 1px solid var(--border); transition: box-shadow 0.2s;
+  }
+  .kpi-card:hover { box-shadow: var(--shadow); }
+  .kpi-label { font-size: 12px; color: var(--ink-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+  .kpi-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 32px; font-weight: 800; color: var(--green-deep); }
+  .kpi-delta { font-size: 13px; color: var(--green-mid); margin-top: 6px; font-weight: 500; }
+  .kpi-delta.neg { color: var(--warn); }
+  .kpi-icon { float: right; font-size: 28px; margin-top: -4px; }
+
+  /* Main grid */
+  .admin-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+  .admin-card {
+    background: white; border-radius: var(--r); padding: 28px;
+    border: 1px solid var(--border);
+  }
+  .admin-card-title {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700;
+    color: var(--green-deep); margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-action {
+    font-size: 13px; color: var(--green-mid); cursor: pointer; font-family: 'Inter'; font-weight: 500;
+  }
+  /* Jobs table */
+  .jobs-table { width: 100%; border-collapse: collapse; }
+  .jobs-table th {
+    text-align: left; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-light);
+    padding: 0 12px 12px; border-bottom: 1px solid var(--border);
+  }
+  .jobs-table td {
+    padding: 14px 12px; border-bottom: 1px solid #f0f4f1;
+    font-size: 14px; color: var(--ink);
+  }
+  .jobs-table tr:last-child td { border-bottom: none; }
+  .jobs-table tr:hover td { background: var(--green-pale); }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 99px;
+    font-size: 12px; font-weight: 600;
+  }
+  .status-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+  .status-badge.confirmed { background: #e8f5e9; color: #2e7d32; }
+  .status-badge.confirmed::before { background: #4caf50; }
+  .status-badge.pending { background: #fff8e1; color: #f57f17; }
+  .status-badge.pending::before { background: #ffc107; }
+  .status-badge.completed { background: #ede7f6; color: #4527a0; }
+  .status-badge.completed::before { background: #7e57c2; }
+  .status-badge.cancelled { background: #fce4ec; color: #880e4f; }
+  .status-badge.cancelled::before { background: #e91e63; }
+  .crew-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--green-mid); color: white;
+    font-size: 11px; font-weight: 700; display: inline-flex;
+    align-items: center; justify-content: center;
+  }
+  .job-action {
+    font-size: 13px; color: var(--green-mid); cursor: pointer; font-weight: 500;
+  }
+  /* Route map placeholder */
+  .route-map {
+    background: var(--green-pale); border-radius: var(--r-sm);
+    height: 200px; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; position: relative; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .map-placeholder-text { color: var(--ink-light); font-size: 14px; z-index: 2; }
+  .map-dot {
+    position: absolute; width: 12px; height: 12px;
+    background: var(--green-bright); border-radius: 50%;
+    border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .map-line {
+    position: absolute; height: 2px; background: var(--green-mid); opacity: 0.5;
+    transform-origin: left center;
+  }
+  /* Today's schedule */
+  .schedule-list { display: flex; flex-direction: column; gap: 12px; }
+  .schedule-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px; border-radius: 12px; background: var(--cream);
+    border: 1px solid var(--border); transition: all 0.2s; cursor: pointer;
+  }
+  .schedule-item:hover { border-color: var(--green-bright); background: var(--green-pale); }
+  .schedule-time {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+    color: var(--green-mid); min-width: 48px; text-align: center;
+  }
+  .schedule-info { flex: 1; }
+  .schedule-name { font-size: 14px; font-weight: 600; color: var(--green-deep); }
+  .schedule-addr { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+  .schedule-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: var(--green-deep); }
+  /* Revenue chart */
+  .mini-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; margin-bottom: 8px; }
+  .chart-bar {
+    flex: 1; background: var(--green-pale); border-radius: 4px 4px 0 0;
+    position: relative; transition: all 0.3s; cursor: pointer;
+    border: 1px solid var(--border);
+  }
+  .chart-bar:hover { background: var(--green-bright); }
+  .chart-bar.today { background: var(--green-mid); }
+  .chart-labels { display: flex; gap: 6px; }
+  .chart-label { flex: 1; text-align: center; font-size: 10px; color: var(--ink-light); }
+  /* New booking modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(13,29,18,0.6); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 24px; padding: 40px;
+    width: 90%; max-width: 520px; box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+    animation: fadeUp 0.2s ease;
+  }
+  .modal h3 { font-size: 24px; font-weight: 800; color: var(--green-deep); margin-bottom: 24px; }
+  .modal-close {
+    float: right; background: var(--cream); border: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    margin: -8px -8px 0 0; color: var(--ink-light);
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .btn-modal-add {
+    width: 100%; margin-top: 20px; padding: 14px;
+    background: var(--green-deep); color: white; border: none;
+    border-radius: var(--r-sm); cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 16px;
+    transition: all 0.2s;
+  }
+  .btn-modal-add:hover { background: var(--green-mid); }
+
+  /* ══════════════════════════════════════
+     GOOGLE MAPS SIMULATION & ROUTE PAGE
+  ══════════════════════════════════════ */
+  .maps-layout {
+    display: grid; grid-template-columns: 380px 1fr;
+    height: calc(100vh - 68px);
+  }
+  .maps-sidebar {
+    background: white; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .maps-sidebar-header {
+    padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+    background: var(--green-deep);
+  }
+  .maps-sidebar-header h3 {
+    color: white; font-size: 18px; font-weight: 800; margin-bottom: 4px;
+  }
+  .maps-sidebar-header p { color: rgba(255,255,255,0.6); font-size: 13px; }
+  .route-stats-bar {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  }
+  .route-stat {
+    flex: 1; padding: 14px 12px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .route-stat:last-child { border-right: none; }
+  .route-stat-val {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800;
+    color: var(--green-deep);
+  }
+  .route-stat-lbl { font-size: 11px; color: var(--ink-light); margin-top: 2px; }
+  .route-stops { flex: 1; overflow-y: auto; padding: 12px; }
+  .route-stop {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px; border-radius: 12px; margin-bottom: 8px;
+    cursor: pointer; transition: all 0.2s; position: relative;
+    border: 1.5px solid var(--border); background: white;
+  }
+  .route-stop:hover { border-color: var(--green-bright); background: var(--green-pale); }
+  .route-stop.active-stop { border-color: var(--green-bright); background: var(--green-pale); box-shadow: var(--shadow); }
+  .stop-num {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14px;
+    color: white; background: var(--green-mid);
+  }
+  .stop-num.done { background: #9e9e9e; }
+  .stop-num.current { background: var(--green-bright); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(45,186,96,0.4)} 50%{box-shadow:0 0 0 8px rgba(45,186,96,0)} }
+  .stop-info { flex: 1; }
+  .stop-name { font-size: 14px; font-weight: 600; color: var(--green-deep); }
+  .stop-addr { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+  .stop-meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .stop-tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 99px;
+    background: var(--green-pale); color: var(--green-mid); font-weight: 600;
+  }
+  .stop-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: var(--green-deep); font-size: 15px; margin-left: auto; }
+  .stop-connector {
+    position: absolute; left: 27px; bottom: -9px;
+    width: 2px; height: 9px; background: var(--border); z-index: 1;
+  }
+  .maps-actions {
+    padding: 16px; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .btn-optimise {
+    width: 100%; padding: 13px; background: var(--accent); color: var(--green-deep);
+    border: none; border-radius: var(--r-sm); cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-optimise:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,255,90,0.5); }
+  .btn-nav {
+    width: 100%; padding: 13px; background: var(--green-deep); color: white;
+    border: none; border-radius: var(--r-sm); cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 15px;
+    transition: all 0.2s;
+  }
+  .btn-nav:hover { background: var(--green-mid); }
+
+  /* Canvas map */
+  .map-canvas-wrap {
+    position: relative; overflow: hidden; background: #e8f0e9;
+  }
+  #map-canvas { width: 100%; height: 100%; display: block; }
+  .map-controls {
+    position: absolute; top: 16px; right: 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .map-ctrl-btn {
+    width: 40px; height: 40px; background: white; border: none;
+    border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    font-size: 18px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .map-ctrl-btn:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.2); transform: scale(1.05); }
+  .map-info-pill {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--green-deep); color: white;
+    padding: 10px 20px; border-radius: 99px;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    display: flex; gap: 16px;
+  }
+  .map-tooltip {
+    position: absolute; background: white; border-radius: 12px;
+    padding: 12px 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    pointer-events: none; min-width: 160px;
+    border: 1.5px solid var(--border); display: none;
+    z-index: 10;
+  }
+  .map-tooltip.visible { display: block; }
+  .map-tooltip-name { font-weight: 700; font-size: 14px; color: var(--green-deep); }
+  .map-tooltip-addr { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+  .map-tooltip-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--green-mid); margin-top: 6px; }
+  .map-tooltip-arrow {
+    position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 7px; overflow: hidden;
+  }
+  .map-tooltip-arrow::after {
+    content: ''; position: absolute; top: -7px; left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 14px; height: 14px; background: white;
+    border: 1.5px solid var(--border);
+  }
+  .optimise-overlay {
+    position: absolute; inset: 0; background: rgba(13,61,30,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px; z-index: 20;
+  }
+  .optimise-overlay.show { display: flex; }
+  .optimise-spinner {
+    width: 52px; height: 52px; border: 4px solid rgba(255,255,255,0.2);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .optimise-text { color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 18px; }
+  .optimise-sub { color: rgba(255,255,255,0.6); font-size: 14px; }
+  .savings-badge {
+    background: var(--accent); color: var(--green-deep);
+    padding: 8px 20px; border-radius: 99px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px;
+    margin-top: 4px;
+  }
+
+  /* ══════════════════════════════════════
+     CREW MOBILE VIEW
+  ══════════════════════════════════════ */
+  #page-crew { background: #0d1a12; }
+  .crew-shell {
+    max-width: 390px; margin: 0 auto;
+    min-height: calc(100vh - 68px);
+    background: #111c14; position: relative;
+    font-family: 'Inter', sans-serif;
+  }
+  .crew-topbar {
+    background: var(--green-deep); padding: 20px 20px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .crew-topbar-left h3 {
+    font-size: 20px; font-weight: 800; color: white; font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .crew-topbar-left p { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+  .crew-avatar-lg {
+    width: 44px; height: 44px; background: var(--green-bright);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: white;
+  }
+  /* Mini map strip */
+  .crew-map-strip {
+    height: 180px; background: #1a2e1e; position: relative; overflow: hidden;
+  }
+  #crew-map-canvas { width: 100%; height: 100%; display: block; }
+  .crew-map-label {
+    position: absolute; bottom: 10px; left: 10px;
+    background: rgba(13,29,18,0.8); color: white;
+    padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600;
+    backdrop-filter: blur(4px);
+  }
+  .crew-next-banner {
+    background: var(--green-bright); padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .crew-next-banner span { font-size: 13px; font-weight: 700; color: var(--green-deep); }
+  .crew-next-banner strong { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .btn-navigate {
+    background: var(--green-deep); color: white;
+    border: none; padding: 8px 16px; border-radius: 99px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  /* Job cards */
+  .crew-jobs { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .crew-job-card {
+    background: #1c2e20; border-radius: 16px;
+    border: 1.5px solid #2a4030; overflow: hidden;
+    transition: all 0.2s;
+  }
+  .crew-job-card.current-job { border-color: var(--green-bright); }
+  .crew-job-header {
+    padding: 16px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .job-stop-num {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: white;
+  }
+  .job-stop-num.done { background: #3a4a3d; color: #6a8a70; }
+  .job-stop-num.now { background: var(--green-bright); }
+  .job-stop-num.next { background: var(--green-mid); }
+  .job-stop-num.later { background: #2a4030; color: rgba(255,255,255,0.4); }
+  .crew-job-info { flex: 1; }
+  .crew-job-name { font-size: 15px; font-weight: 700; color: white; }
+  .crew-job-addr { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 3px; }
+  .crew-job-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .crew-tag {
+    font-size: 11px; padding: 3px 9px; border-radius: 99px;
+    font-weight: 600;
+  }
+  .crew-tag.green { background: rgba(45,186,96,0.15); color: var(--green-bright); }
+  .crew-tag.time { background: rgba(232,255,90,0.12); color: var(--accent); }
+  .crew-tag.size { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+  .crew-job-price {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: white;
+  }
+  .crew-job-actions {
+    padding: 0 16px 16px; display: flex; gap: 8px;
+  }
+  .crew-btn {
+    flex: 1; padding: 11px; border-radius: 10px; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+  .crew-btn.primary { background: var(--green-bright); color: white; }
+  .crew-btn.primary:hover { background: var(--green-mid); }
+  .crew-btn.ghost { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
+  .crew-btn.ghost:hover { background: rgba(255,255,255,0.12); }
+  .crew-btn.done-btn { background: #3a4a3d; color: #6a8a70; cursor: default; }
+  /* Done banner inside card */
+  .done-strip {
+    margin: 0 16px 16px; padding: 10px 14px;
+    background: rgba(45,186,96,0.1); border-radius: 10px;
+    border: 1px solid rgba(45,186,96,0.2);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--green-bright); font-weight: 600;
+  }
+  /* Day summary footer */
+  .crew-footer {
+    margin: 8px 16px 24px; background: #1c2e20; border-radius: 16px;
+    padding: 18px; border: 1px solid #2a4030;
+  }
+  .crew-footer-title { font-size: 13px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px; }
+  .crew-footer-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .crew-footer-stat { text-align: center; }
+  .crew-footer-val { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; color: white; }
+  .crew-footer-lbl { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+  /* Photo upload prompt */
+  .crew-photo-prompt {
+    margin: 0 16px 10px; padding: 14px;
+    background: rgba(232,255,90,0.06); border: 1.5px dashed rgba(232,255,90,0.3);
+    border-radius: 12px; text-align: center;
+    color: rgba(232,255,90,0.7); font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .crew-photo-prompt:hover { background: rgba(232,255,90,0.1); }
+
+  .booking-page { overflow: visible !important; }
+  .booking-step { overflow: visible !important; }
+  #step-2 { overflow: visible !important; }
+  gmp-placeautocomplete {
+    width: 100%;
+    --gmp-mat-input-shape-corner-all: 8px;
+  }
+  .pac-container { z-index: 99999 !important; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .hero-right { min-height: 400px; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .pricing-cards { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .admin-grid { grid-template-columns: 1fr; }
+    .admin-layout { grid-template-columns: 1fr; }
+    .admin-sidebar { display: none; }
+    nav { padding: 0 20px; }
+    .hero-left { padding: 48px 24px; }
+    .section { padding: 60px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="showPage('home')">
+    <div class="leaf"></div>
+    Neat<span> Green</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home'); setTab(this)">Home</button>
+    <button class="nav-tab" onclick="showPage('book'); setTab(this)">Book a Cut</button>
+    <button class="nav-tab" onclick="showPage('admin'); setTab(this)">Admin</button>
+    <button class="nav-tab" onclick="showPage('crew'); setTab(this); initCrewMap()">Crew</button>
+  </div>
+  <button class="nav-cta" onclick="showPage('book'); setTab(document.querySelectorAll('.nav-tab')[1])">Get a Quote →</button>
+</nav>
+
+<!-- ═══════════════════ HOME PAGE ═══════════════════ -->
+<div class="page active" id="page-home">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <h1>Your lawn,<br><em>perfectly cut.</em><br>On your schedule.</h1>
+      <p class="hero-sub">Book a professional lawn cut in under 60 seconds. Fixed prices, instant confirmation, no faff.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="showPage('book'); setTab(document.querySelectorAll('.nav-tab')[1])">
+          Get instant quote
+        </button>
+        <button class="btn-secondary">Watch how it works</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-num">2min</div>
+          <div class="stat-label">Average booking time</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">4.9</div>
+          <div class="stat-label">Customer rating</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">100%</div>
+          <div class="stat-label">Satisfaction guarantee</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <!-- 3-STEP JOURNEY PANEL -->
+      <div class="booking-card" style="max-width:440px">
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="font-size:13px;font-weight:600;color:var(--green-bright);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Book your cut in 3 easy steps</div>
+          <h3 style="font-size:26px;line-height:1.2;margin-bottom:0">Your perfect lawn,<br>starting right here</h3>
+        </div>
+
+        <!-- STEP 1: Address -->
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:20px">
+          <div style="width:36px;height:36px;background:var(--green-deep);border-radius:10px;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+            font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:var(--accent);font-size:16px">1</div>
+          <div style="flex:1">
+            <div style="font-weight:700;color:var(--green-deep);margin-bottom:6px;font-size:15px">Enter your address</div>
+            <div style="font-size:13px;color:var(--ink-light);margin-bottom:10px">Search by name, street or postcode</div>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="hero-addr-input" placeholder="Address or postcode..."
+                onkeydown="if(event.key==='Enter') heroLookup()"
+                style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;
+                font-family:'Inter',sans-serif;font-size:14px;outline:none;background:var(--cream);color:var(--ink)">
+              <button onclick="heroLookup()" style="padding:10px 14px;background:var(--green-deep);
+                color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap">
+                Find →
+              </button>
+            </div>
+            <div id="hero-addr-status" style="font-size:12px;color:var(--ink-light);margin-top:6px"></div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="height:1px;background:var(--border);margin:4px 0 20px"></div>
+
+        <!-- STEP 2: Map your garden -->
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:20px">
+          <div style="width:36px;height:36px;background:var(--green-mid);border-radius:10px;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+            font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:white;font-size:16px;opacity:0.7">2</div>
+          <div style="flex:1">
+            <div style="font-weight:700;color:var(--green-deep);margin-bottom:4px;font-size:15px">Map your garden &amp; get your quote</div>
+            <div style="font-size:13px;color:var(--ink-light)">We show your property on satellite view — draw around your lawn and we'll calculate your price instantly</div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="height:1px;background:var(--border);margin:4px 0 20px"></div>
+
+        <!-- STEP 3: Date, time & payment -->
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:24px">
+          <div style="width:36px;height:36px;background:var(--green-mid);border-radius:10px;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+            font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:white;font-size:16px;opacity:0.7">3</div>
+          <div style="flex:1">
+            <div style="font-weight:700;color:var(--green-deep);margin-bottom:4px;font-size:15px">Choose your date &amp; pay</div>
+            <div style="font-size:13px;color:var(--ink-light)">Pick from available slots, set your frequency, and complete your booking securely in seconds</div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;background:var(--green-pale);color:var(--green-mid);
+                padding:3px 10px;border-radius:99px;font-weight:600">Instant slots</span>
+              <span style="font-size:11px;background:var(--green-pale);color:var(--green-mid);
+                padding:3px 10px;border-radius:99px;font-weight:600">Secure payment</span>
+              <span style="font-size:11px;background:var(--green-pale);color:var(--green-mid);
+                padding:3px 10px;border-radius:99px;font-weight:600">Instant confirmation</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-book" onclick="heroStartBooking()">
+          Start booking now →
+        </button>
+        <div class="booking-trust">Secure · Free cancellation · No contract</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="section" style="background: white;">
+    <div class="section-inner">
+      <div class="section-tag">Simple process</div>
+      <h2 class="section-title">Lawn care, finally made easy.</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <div class="step-icon"></div>
+          <h4>Enter your address</h4>
+          <p>We use your postcode to confirm we cover your area and give you a fixed, transparent price instantly.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <div class="step-icon"></div>
+          <h4>Pick your slot</h4>
+          <p>Choose from available times that suit you. Subscribe for regular cuts and never think about it again.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <div class="step-icon"></div>
+          <h4>We show up & deliver</h4>
+          <p>Our team arrives on time, cuts your lawn to perfection, and you get a photo confirmation when done.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="pricing-strip">
+    <div class="pricing-inner">
+      <h2 class="pricing-title">Transparent pricing.</h2>
+      <p class="pricing-sub">Fixed prices, no hidden fees. Subscribe and save.</p>
+      <div class="pricing-cards">
+        <div class="pricing-card">
+          <div class="pricing-size">Small garden · up to 40m²</div>
+          <div class="pricing-price"><sup>£</sup>35</div>
+          <div class="pricing-desc">per cut</div>
+          <button class="btn-book-sm" onclick="showPage('book')">Book now</button>
+        </div>
+        <div class="pricing-card featured">
+          <div class="featured-tag">Most popular</div>
+          <div class="pricing-size">Medium garden · 40–80m²</div>
+          <div class="pricing-price"><sup>£</sup>45</div>
+          <div class="pricing-desc">per cut</div>
+          <button class="btn-book-sm" onclick="showPage('book')">Book now</button>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-size">Large garden · 80–150m²</div>
+          <div class="pricing-price"><sup>£</sup>60</div>
+          <div class="pricing-desc">per cut</div>
+          <button class="btn-book-sm" onclick="showPage('book')">Book now</button>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-size">XL garden · 150m²+</div>
+          <div class="pricing-price" style="font-size:24px;margin:16px 0 8px;">Based on Map</div>
+          <div class="pricing-desc">from £0.45/m² · calculated when you draw</div>
+          <button class="btn-book-sm" style="margin-top:21px" onclick="showPage('book')">Book now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ BOOKING PAGE ═══════════════════ -->
+<div class="page" id="page-book">
+  <div class="booking-page">
+    <h2>Book your lawn cut</h2>
+    <p>Takes about 2 minutes. Fixed price, instant confirmation.</p>
+
+    <!-- Step indicator -->
+    <div class="progress-bar" style="margin-bottom:12px">
+      <div class="progress-step active" id="prog-1"></div>
+      <div class="progress-step" id="prog-2"></div>
+      <div class="progress-step" id="prog-3"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-light);margin-bottom:36px">
+      <span id="step-label-1" style="font-weight:600;color:var(--green-mid)">1. Your address</span>
+      <span id="step-label-2">2. Map &amp; price</span>
+      <span id="step-label-3">3. Date &amp; confirm</span>
+    </div>
+
+    <!-- STEP 1: Address & Lawn Map -->
+    <div class="booking-step active" id="step-1">
+      <div class="step-title">Where is your garden?</div>
+      <div class="form-group">
+        <label class="form-label">Address or postcode</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="form-input" id="addr-search-input"
+            placeholder="e.g. Brightley Mill, Okehampton or EX20 3PX"
+            onkeydown="if(event.key==='Enter') lookupAddress()" style="flex:1">
+          <button onclick="lookupAddress()" style="padding:13px 18px;background:var(--green-deep);
+            color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap">Find →</button>
+        </div>
+        <div id="addr-search-status" style="font-size:12px;color:var(--ink-light);margin-top:6px">
+          Type your full address, farm name, or postcode and click Find
+        </div>
+        <div id="addr-suggestions" style="display:none;border:1.5px solid var(--border);
+          border-radius:8px;background:white;margin-top:4px;overflow:hidden;
+          box-shadow:0 4px 16px rgba(0,0,0,0.1);z-index:9999;position:relative"></div>
+      </div>
+
+      <!-- Hidden fields -->
+      <input type="hidden" id="addr-street">
+      <input type="hidden" id="addr-postcode">
+      <input type="hidden" id="addr-lat">
+      <input type="hidden" id="addr-lng">
+
+      <!-- Lawn sizer map -->
+
+      <div class="step-nav" style="margin-top:24px">
+        <button class="btn-next" onclick="goToStepTwo()">Continue — Map your garden →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Map your garden -->
+    <div class="booking-step" id="step-2">
+      <div class="step-title">Map your garden &amp; get your quote</div>
+
+      <div id="step2-addr-banner" style="background:var(--green-pale);border-radius:10px;padding:12px 16px;
+        margin-bottom:20px;border:1px solid var(--border);font-size:14px;color:var(--green-deep)">
+        <strong>Address:</strong> <span id="step2-addr-display">—</span>
+      </div>
+
+      <div id="lawn-sizer-wrap" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <label class="form-label" style="margin:0">Draw around your lawn to measure it</label>
+          <button onclick="resetLawnPolygon()" style="background:transparent;border:1px solid var(--border);
+            padding:4px 12px;border-radius:99px;font-size:12px;cursor:pointer;color:var(--ink-light)">Redraw</button>
+        </div>
+        <div id="lawn-map" style="width:100%;height:360px;border-radius:12px;
+          border:2px solid var(--border);overflow:hidden;background:#eaf2eb;"></div>
+        <div id="lawn-result" style="display:none;margin-top:12px;padding:14px;
+          background:var(--green-pale);border-radius:10px;border:1px solid var(--green-bright);">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700;color:var(--green-deep);font-size:16px" id="lawn-area-text">~65m²</div>
+              <div style="font-size:13px;color:var(--ink-light)" id="lawn-size-text">Medium garden</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;color:var(--green-mid)" id="lawn-price-text">£45</div>
+              <div style="font-size:12px;color:var(--ink-light)">per cut</div>
+            </div>
+          </div>
+        </div>
+        <div id="lawn-draw-hint" style="margin-top:10px;padding:10px 14px;background:#fff8e1;
+          border-radius:8px;font-size:13px;color:#7a5c00;border:1px solid #ffe082;">
+          Click points around your lawn boundary — double-click to finish. You can drag corners to adjust.
+        </div>
+      </div>
+      <div style="margin-top:16px;font-size:13px;color:var(--ink-light)" id="step2-map-hint">Loading your property on the map...</div>
+
+      <div class="step-nav" style="margin-top:24px">
+        <button class="btn-back" onclick="bookNextStep(1)">← Back</button>
+        <button class="btn-next" onclick="bookNextStep(3)">Continue — Choose date &amp; time →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Date, Time, Frequency + Confirm -->
+    <div class="booking-step" id="step-3">
+      <div class="step-title">When would you like us?</div>
+
+      <!-- Price summary from map -->
+      <div id="step2-summary" style="background:var(--green-pale);border-radius:12px;padding:14px 18px;
+        margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;
+        border:1px solid var(--border)">
+        <div>
+          <div style="font-size:13px;color:var(--ink-light)">Your lawn</div>
+          <div style="font-weight:700;color:var(--green-deep)" id="s2-size-label">Medium garden</div>
+        </div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;color:var(--green-mid)" id="s2-price-label">£45</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">How often?</label>
+        <div class="freq-pills">
+          <div class="freq-pill" onclick="selectBookFreq(this,'ONE_OFF')">One-off</div>
+          <div class="freq-pill selected" onclick="selectBookFreq(this,'FORTNIGHTLY')">Fortnightly</div>
+          <div class="freq-pill" onclick="selectBookFreq(this,'MONTHLY')">Monthly</div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:24px">
+        <label class="form-label">Pick a date</label>
+        <div class="date-grid" id="date-grid"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Preferred time</label>
+        <div class="time-grid">
+          <div class="time-slot" onclick="selectTime(this)">8:00 AM</div>
+          <div class="time-slot" onclick="selectTime(this)">9:00 AM</div>
+          <div class="time-slot busy">10:00 AM</div>
+          <div class="time-slot" onclick="selectTime(this)">11:00 AM</div>
+          <div class="time-slot busy">1:00 PM</div>
+          <div class="time-slot" onclick="selectTime(this)">2:00 PM</div>
+          <div class="time-slot" onclick="selectTime(this)">3:00 PM</div>
+          <div class="time-slot" onclick="selectTime(this)">4:00 PM</div>
+          <div class="time-slot busy">5:00 PM</div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="bookNextStep(2)">← Back</button>
+        <button class="btn-next" onclick="bookNextStep(4)">Continue — Your details →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Contact details + Confirm -->
+    <div class="booking-step" id="step-4">
+      <div class="step-title">Confirm your booking</div>
+
+      <div class="confirm-summary">
+        <div class="confirm-row">
+          <span class="cr-label">Service</span>
+          <span class="cr-value" id="conf-size">Medium garden cut</span>
+        </div>
+        <div class="confirm-row">
+          <span class="cr-label">Garden size</span>
+          <span class="cr-value" id="conf-area">~65m²</span>
+        </div>
+        <div class="confirm-row">
+          <span class="cr-label">Frequency</span>
+          <span class="cr-value" id="conf-freq">Fortnightly</span>
+        </div>
+        <div class="confirm-row">
+          <span class="cr-label">Date &amp; time</span>
+          <span class="cr-value" id="conf-dt">Wed 30 Apr · 9:00 AM</span>
+        </div>
+        <div class="confirm-row">
+          <span class="cr-label">Address</span>
+          <span class="cr-value" id="conf-addr" style="text-align:right;max-width:60%">Your address</span>
+        </div>
+        <div class="confirm-row" id="conf-notes-row" style="display:none">
+          <span class="cr-label">Access notes</span>
+          <span class="cr-value" id="conf-notes"></span>
+        </div>
+        <div class="confirm-row" style="padding-top:16px;margin-top:4px">
+          <span class="cr-label" style="font-weight:700;color:var(--green-deep)">Price per cut</span>
+          <span class="cr-value confirm-total" id="conf-price">£45</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Your name</label>
+        <input type="text" class="form-input" id="contact-name" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="contact-email" placeholder="you@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="tel" class="form-input" id="contact-phone" placeholder="07xxx xxxxxx">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gate / access notes (optional)</label>
+        <input type="text" class="form-input" id="addr-notes" placeholder="e.g. Side gate, code 1234">
+      </div>
+
+      <div style="background:var(--green-pale);border-radius:var(--r-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--ink-light);">
+        Payment taken after each visit. No charge today. Cancel anytime.
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="bookNextStep(2)">← Back</button>
+        <button class="btn-next" onclick="confirmBooking()" style="background:var(--green-bright)">Confirm booking</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="booking-step" id="step-success">
+      <div class="success-state">
+        <div class="success-icon"></div>
+        <h3>You're booked in!</h3>
+        <p>We'll send a confirmation to your email with everything you need.<br>Your crew will arrive on time — we'll text you 30 mins before.</p>
+        <div class="booking-ref" id="booking-ref">NG-4821</div>
+        <div style="margin-top:32px">
+          <button class="btn-primary" onclick="showPage('home'); setTab(document.querySelectorAll('.nav-tab')[0])" style="margin:0 auto;display:inline-flex">
+            ← Back to home
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════ MAPS / ROUTE PAGE ═══════════════════ -->
+<div class="page" id="page-maps">
+  <div class="maps-layout">
+
+    <!-- Sidebar -->
+    <div class="maps-sidebar">
+      <div class="maps-sidebar-header">
+        <h3> Today's Route</h3>
+        <p>AI-optimised · 5 stops · Sun 19 Apr</p>
+      </div>
+      <div class="route-stats-bar">
+        <div class="route-stat">
+          <div class="route-stat-val">11.4mi</div>
+          <div class="route-stat-lbl">Total distance</div>
+        </div>
+        <div class="route-stat">
+          <div class="route-stat-val">38min</div>
+          <div class="route-stat-lbl">Drive time</div>
+        </div>
+        <div class="route-stat">
+          <div class="route-stat-val">£245</div>
+          <div class="route-stat-lbl">Day revenue</div>
+        </div>
+      </div>
+
+      <div class="route-stops" id="route-stops-list">
+        <!-- Generated by JS -->
+      </div>
+
+      <div class="maps-actions">
+        <button class="btn-optimise" onclick="runOptimise()">Re-optimise with AI</button>
+        <button class="btn-nav" onclick="showPage('crew'); setTab(document.querySelectorAll('.nav-tab')[3]); initCrewMap()">Open crew view</button>
+      </div>
+    </div>
+
+    <!-- Map canvas -->
+    <div class="map-canvas-wrap">
+      <div id="full-route-map" style="width:100%;height:100%;"></div>
+
+      <div class="map-controls">
+        <button class="map-ctrl-btn" onclick="mapZoom(1.2)" title="Zoom in">+</button>
+        <button class="map-ctrl-btn" onclick="mapZoom(0.8)" title="Zoom out">−</button>
+        <button class="map-ctrl-btn" onclick="mapReset()" title="Reset view">⊕</button>
+        <button class="map-ctrl-btn" title="Satellite"></button>
+      </div>
+
+      <div class="map-info-pill">
+        <span>Current: Stop 2 of 5</span>
+        <span>Next stop: 8 min</span>
+        <span>£2.80 fuel est.</span>
+      </div>
+
+      <div class="map-tooltip" id="map-tooltip">
+        <div class="map-tooltip-name" id="tt-name">Sarah Johnson</div>
+        <div class="map-tooltip-addr" id="tt-addr">14 Oak Avenue, SW4</div>
+        <div class="map-tooltip-price" id="tt-price">£45</div>
+        <div class="map-tooltip-arrow"></div>
+      </div>
+
+      <!-- AI optimise overlay -->
+      <div class="optimise-overlay" id="optimise-overlay">
+        <div class="optimise-spinner"></div>
+        <div class="optimise-text">Optimising route...</div>
+        <div class="optimise-sub">Checking traffic, clustering by postcode</div>
+        <div class="savings-badge" id="savings-badge" style="display:none"> Saved 2.3 miles & 14 minutes!</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════ CREW MOBILE VIEW ═══════════════════ -->
+<div class="page" id="page-crew">
+  <div style="background:#0d1a12; min-height:calc(100vh - 68px); display:flex; align-items:flex-start; justify-content:center; padding: 0 0 40px;">
+  <div class="crew-shell">
+
+    <!-- Top bar -->
+    <div class="crew-topbar">
+      <div class="crew-topbar-left">
+        <h3>Neat Green Crew</h3>
+        <p id="crew-date-label">Sunday 19 Apr · 5 jobs today</p>
+      </div>
+      <div class="crew-avatar-lg">JD</div>
+    </div>
+
+    <!-- Mini map -->
+    <div class="crew-map-strip">
+      <canvas id="crew-map-canvas"></canvas>
+      <div class="crew-map-label">En route to Stop 2</div>
+    </div>
+
+    <!-- Next stop banner -->
+    <div class="crew-next-banner">
+      <span>Next: <strong>7 Elm Close</strong> · 8 min away</span>
+      <button class="btn-navigate">Navigate</button>
+    </div>
+
+    <!-- Job list -->
+    <div class="crew-jobs" id="crew-jobs-list">
+      <!-- Generated by JS -->
+    </div>
+
+    <!-- Photo upload -->
+    <div class="crew-photo-prompt" onclick="this.textContent=' Photo uploaded! '">
+      Upload completion photo for current job
+    </div>
+
+    <!-- Day summary -->
+    <div class="crew-footer">
+      <div class="crew-footer-title">Day summary</div>
+      <div class="crew-footer-stats">
+        <div class="crew-footer-stat">
+          <div class="crew-footer-val" id="crew-done-count">1</div>
+          <div class="crew-footer-lbl">Done</div>
+        </div>
+        <div class="crew-footer-stat">
+          <div class="crew-footer-val">4</div>
+          <div class="crew-footer-lbl">Remaining</div>
+        </div>
+        <div class="crew-footer-stat">
+          <div class="crew-footer-val">£45</div>
+          <div class="crew-footer-lbl">Earned</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+</div>
+
+<!-- ADD JOB MODAL -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal-add').classList.remove('open')"></button>
+    <h3>Add new job</h3>
+    <div class="two-col">
+      <div class="form-group">
+        <label class="form-label">Customer name</label>
+        <input type="text" class="form-input" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="tel" class="form-input" placeholder="07xxx xxxxxx">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Address</label>
+      <input type="text" class="form-input" placeholder="Full address">
+    </div>
+    <div class="two-col">
+      <div class="form-group">
+        <label class="form-label">Garden size</label>
+        <select class="form-select">
+          <option>Small (£35)</option>
+          <option selected>Medium (£45)</option>
+          <option>Large (£60)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input">
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="form-group">
+        <label class="form-label">Time</label>
+        <select class="form-select">
+          <option>8:00 AM</option>
+          <option>9:00 AM</option>
+          <option selected>10:00 AM</option>
+          <option>11:00 AM</option>
+          <option>1:00 PM</option>
+          <option>2:00 PM</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Frequency</label>
+        <select class="form-select">
+          <option>One-off</option>
+          <option selected>Fortnightly</option>
+          <option>Monthly</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-modal-add" onclick="document.getElementById('modal-add').classList.remove('open')">
+      Add job
+    </button>
+  </div>
+</div>
+
+<script>
+  // ── PAGE ROUTING ──
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+  function setTab(el) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ── HERO CARD ──
+  let heroPrice = 45;
+  function selectSize(el, price) {
+    document.querySelectorAll('.size-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    heroPrice = price;
+    document.getElementById('hero-price').textContent = '£' + price;
+  }
+  function selectFreq(el) {
+    document.querySelectorAll('.freq-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    const labels = {
+      'One-off': 'single visit',
+      'Fortnightly': 'fortnightly subscription',
+      'Monthly': 'monthly subscription'
+    };
+    document.getElementById('hero-freq-label').textContent = labels[el.textContent] || 'per visit';
+  }
+
+  // ── BOOKING FLOW ──
+  let bookData = { size: 'Medium', price: 45, freq: 'Fortnightly', date: '', time: '' };
+  let currentStep = 1;
+
+  function selectOption(el, type, val, price) {
+    el.closest('.option-grid').querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    if (type === 'size') { bookData.size = val; bookData.price = price; }
+  }
+  function selectBookFreq(el, val) {
+    el.parentElement.querySelectorAll('.freq-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    bookData.freq = val;
+  }
+  function selectTime(el) {
+    if (el.classList.contains('busy')) return;
+    document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+    el.classList.add('selected');
+    bookData.time = el.textContent.trim();
+  }
+
+  function nextStep(n) {
+    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.progress-step').forEach((p, i) => {
+      p.classList.remove('active', 'done');
+      if (i + 1 < n) p.classList.add('done');
+      else if (i + 1 === n) p.classList.add('active');
+    });
+    document.getElementById('step-' + n).classList.add('active');
+    currentStep = n;
+  }
+
+  function confirmBooking() {
+    const sizeMap = { small: 'Small garden cut', medium: 'Medium garden cut', large: 'Large garden cut', xl: 'XL garden cut' };
+    document.getElementById('conf-size').textContent = sizeMap[bookData.size] || 'Medium garden cut';
+    document.getElementById('conf-freq').textContent = bookData.freq;
+    document.getElementById('conf-price').textContent = '£' + bookData.price;
+    document.getElementById('conf-dt').textContent = bookData.date || 'Wed 23 Apr' + ' · ' + (bookData.time || '9:00 AM');
+    const st = document.getElementById('addr-street');
+    const pc = document.getElementById('addr-postcode');
+    document.getElementById('conf-addr').textContent = (st && st.value ? st.value + ', ' : '42 Green Lane, ') + (pc && pc.value ? pc.value : 'M1 1AA');
+    nextStep(4);
+  }
+
+  // Generate date cells
+  function buildDateGrid() {
+    const grid = document.getElementById('date-grid');
+    if (!grid) return;
+    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    const today = new Date();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const cell = document.createElement('div');
+      cell.className = 'date-cell' + (i === 0 ? ' disabled' : '');
+      cell.innerHTML = `<span class="dc-day">${days[d.getDay()]}</span><span class="dc-num">${d.getDate()}</span>`;
+      if (i > 0) cell.onclick = function() {
+        document.querySelectorAll('.date-cell').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        bookData.date = days[d.getDay()] + ' ' + d.getDate() + ' ' + d.toLocaleString('en-GB',{month:'short'});
+      };
+      grid.appendChild(cell);
+    }
+  }
+  buildDateGrid();
+
+  function confirmBooking() {
+    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
+    document.getElementById('step-success').classList.add('active');
+    document.getElementById('booking-ref').textContent = 'GR-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
+
+  // ══════════════════════════════════════
+  // SHARED DATA
+  // ══════════════════════════════════════
+  const STOPS = [
+    { id:1, name:'Sarah Johnson',  addr:'14 Oak Avenue, SW4',    size:'Medium', price:45, time:'8:00 AM',  status:'done',    x:0.18, y:0.28 },
+    { id:2, name:'Mike Kowalski',  addr:'7 Elm Close, SW2',      size:'Large',  price:60, time:'9:30 AM',  status:'current', x:0.42, y:0.48 },
+    { id:3, name:'Rachel Pierce',  addr:'3 Birch Road, SW4',     size:'Small',  price:35, time:'11:00 AM', status:'next',    x:0.65, y:0.30 },
+    { id:4, name:'David Williams', addr:'22 Pine Street, SW3',   size:'Medium', price:45, time:'1:00 PM',  status:'later',   x:0.38, y:0.68 },
+    { id:5, name:'Anna Lawson',    addr:'9 Cedar Lane, SW5',     size:'Large',  price:60, time:'2:30 PM',  status:'later',   x:0.72, y:0.72 },
+  ];
+
+  // ══════════════════════════════════════
+  // GOOGLE MAPS SIMULATION
+  // ══════════════════════════════════════
+  let mapScale = 1, mapOffX = 0, mapOffY = 0;
+  let mapDragging = false, mapDragStart = null;
+  let activeStop = 1;
+
+  function initMap() {
+    const canvas = document.getElementById('map-canvas');
+    if (!canvas) return;
+    const wrap = canvas.parentElement;
+    canvas.width = wrap.offsetWidth;
+    canvas.height = wrap.offsetHeight;
+    drawMap(canvas);
+    canvas.addEventListener('mousemove', e => handleMapHover(e, canvas));
+    canvas.addEventListener('mouseout', () => { document.getElementById('map-tooltip').classList.remove('visible'); });
+    canvas.addEventListener('click', e => handleMapClick(e, canvas));
+    canvas.addEventListener('mousedown', e => { mapDragging = true; mapDragStart = {x: e.clientX - mapOffX, y: e.clientY - mapOffY}; });
+    canvas.addEventListener('mouseup', () => mapDragging = false);
+    canvas.addEventListener('mousemove', e => {
+      if (!mapDragging) return;
+      mapOffX = e.clientX - mapDragStart.x;
+      mapOffY = e.clientY - mapDragStart.y;
+      drawMap(canvas);
+    });
+  }
+
+  function drawMap(canvas) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(mapOffX, mapOffY);
+    ctx.scale(mapScale, mapScale);
+
+    // Background – subtle grid (simulates map tiles)
+    drawMapBackground(ctx, W, H);
+
+    // Road network
+    drawRoads(ctx, W, H);
+
+    // Route line between stops (optimised order)
+    drawRouteLine(ctx, W, H);
+
+    // Stop markers
+    STOPS.forEach((s, i) => {
+      const px = s.x * W, py = s.y * H;
+      drawMapPin(ctx, px, py, s, i + 1);
+    });
+
+    // Depot / home base
+    drawDepot(ctx, 0.08 * W, 0.5 * H);
+
+    ctx.restore();
+  }
+
+  function drawMapBackground(ctx, W, H) {
+    // Base colour
+    ctx.fillStyle = '#eaf2eb';
+    ctx.fillRect(-mapOffX / mapScale - 200, -mapOffY / mapScale - 200, (W + 400) / mapScale, (H + 400) / mapScale);
+
+    // Grid lines simulating streets
+    ctx.strokeStyle = '#d8e8da';
+    ctx.lineWidth = 1 / mapScale;
+    const step = 60;
+    for (let x = 0; x < W + 200; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H + 200; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    // Parks
+    const parks = [{x:0.25,y:0.15,w:0.12,h:0.18},{x:0.6,y:0.5,w:0.1,h:0.14},{x:0.1,y:0.65,w:0.14,h:0.2}];
+    parks.forEach(p => {
+      ctx.fillStyle = '#c5e8c8';
+      ctx.beginPath();
+      ctx.roundRect(p.x * W, p.y * H, p.w * W, p.h * H, 4);
+      ctx.fill();
+      ctx.fillStyle = '#a8d4ab';
+      ctx.font = `${11 / mapScale}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('', (p.x + p.w / 2) * W, (p.y + p.h / 2) * H + 4);
+    });
+    // Buildings
+    const buildings = [{x:0.45,y:0.18},{x:0.55,y:0.55},{x:0.78,y:0.35},{x:0.22,y:0.72},{x:0.5,y:0.82}];
+    buildings.forEach(b => {
+      ctx.fillStyle = '#dde8de';
+      ctx.fillRect(b.x * W, b.y * H, 28, 18);
+      ctx.strokeStyle = '#c8d8ca'; ctx.lineWidth = 0.5; ctx.strokeRect(b.x * W, b.y * H, 28, 18);
+    });
+  }
+
+  function drawRoads(ctx, W, H) {
+    const roads = [
+      [{x:0.0,y:0.38},{x:1.0,y:0.38}],
+      [{x:0.0,y:0.62},{x:1.0,y:0.62}],
+      [{x:0.3,y:0.0},{x:0.3,y:1.0}],
+      [{x:0.58,y:0.0},{x:0.58,y:1.0}],
+      [{x:0.0,y:0.5},{x:1.0,y:0.55}],
+      [{x:0.12,y:0.2},{x:0.85,y:0.35}],
+      [{x:0.1,y:0.75},{x:0.9,y:0.78}],
+    ];
+    roads.forEach(r => {
+      ctx.beginPath();
+      ctx.moveTo(r[0].x * W, r[0].y * H);
+      ctx.lineTo(r[1].x * W, r[1].y * H);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8 / mapScale;
+      ctx.stroke();
+      ctx.strokeStyle = '#e8efe9'; ctx.lineWidth = 1 / mapScale;
+      ctx.stroke();
+    });
+  }
+
+  function drawRouteLine(ctx, W, H) {
+    const order = [
+      {x: 0.08, y: 0.5}, // depot
+      ...STOPS.map(s => ({x: s.x, y: s.y}))
+    ];
+    // Shadow
+    ctx.beginPath();
+    order.forEach((p, i) => i === 0 ? ctx.moveTo(p.x * W, p.y * H) : ctx.lineTo(p.x * W, p.y * H));
+    ctx.strokeStyle = 'rgba(13,61,30,0.15)'; ctx.lineWidth = 7 / mapScale;
+    ctx.lineJoin = 'round'; ctx.stroke();
+    // Main line
+    ctx.beginPath();
+    order.forEach((p, i) => i === 0 ? ctx.moveTo(p.x * W, p.y * H) : ctx.lineTo(p.x * W, p.y * H));
+    ctx.strokeStyle = '#2dba60'; ctx.lineWidth = 4 / mapScale;
+    ctx.setLineDash([10 / mapScale, 4 / mapScale]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Arrow heads along route
+    for (let i = 1; i < order.length; i++) {
+      const from = order[i-1], to = order[i];
+      const mx = ((from.x + to.x) / 2) * W, my = ((from.y + to.y) / 2) * H;
+      const angle = Math.atan2((to.y - from.y) * H, (to.x - from.x) * W);
+      ctx.save();
+      ctx.translate(mx, my);
+      ctx.rotate(angle);
+      ctx.fillStyle = '#2dba60';
+      ctx.beginPath();
+      ctx.moveTo(6 / mapScale, 0);
+      ctx.lineTo(-4 / mapScale, -4 / mapScale);
+      ctx.lineTo(-4 / mapScale, 4 / mapScale);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawMapPin(ctx, x, y, stop, num) {
+    const colors = { done: '#9e9e9e', current: '#2dba60', next: '#1a6b35', later: '#0d3d1e' };
+    const col = colors[stop.status] || '#0d3d1e';
+    const r = stop.status === 'current' ? 20 / mapScale : 16 / mapScale;
+
+    // Glow for current
+    if (stop.status === 'current') {
+      ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(45,186,96,0.18)'; ctx.fill();
+    }
+    // Pin circle
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2 / mapScale; ctx.stroke();
+    // Number
+    ctx.fillStyle = 'white';
+    ctx.font = `bold ${12 / mapScale}px Plus Jakarta Sans, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(num, x, y);
+    // Label below
+    ctx.fillStyle = '#0d3d1e';
+    ctx.font = `${10 / mapScale}px Inter, sans-serif`;
+    ctx.fillText(stop.name.split(' ')[0], x, y + r + 10 / mapScale);
+  }
+
+  function drawDepot(ctx, x, y) {
+    ctx.beginPath(); ctx.arc(x, y, 14 / mapScale, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8ff5a'; ctx.fill();
+    ctx.strokeStyle = '#0d3d1e'; ctx.lineWidth = 2 / mapScale; ctx.stroke();
+    ctx.fillStyle = '#0d3d1e';
+    ctx.font = `${12 / mapScale}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('', x, y);
+    ctx.font = `bold ${9 / mapScale}px Inter`;
+    ctx.fillText('Depot', x, y + 20 / mapScale);
+  }
+
+  function getStopAt(e, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left - mapOffX) / mapScale;
+    const my = (e.clientY - rect.top - mapOffY) / mapScale;
+    const W = canvas.width, H = canvas.height;
+    for (const s of STOPS) {
+      const px = s.x * W, py = s.y * H;
+      const dist = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
+      if (dist < 22 / mapScale) return s;
+    }
+    return null;
+  }
+
+  function handleMapHover(e, canvas) {
+    const s = getStopAt(e, canvas);
+    const tt = document.getElementById('map-tooltip');
+    if (s) {
+      const rect = canvas.getBoundingClientRect();
+      tt.style.left = (e.clientX - rect.left - 80) + 'px';
+      tt.style.top = (e.clientY - rect.top - 100) + 'px';
+      document.getElementById('tt-name').textContent = s.name;
+      document.getElementById('tt-addr').textContent = s.addr;
+      document.getElementById('tt-price').textContent = '£' + s.price;
+      tt.classList.add('visible');
+      canvas.style.cursor = 'pointer';
+    } else {
+      tt.classList.remove('visible');
+      canvas.style.cursor = mapDragging ? 'grabbing' : 'grab';
+    }
+  }
+
+  function handleMapClick(e, canvas) {
+    const s = getStopAt(e, canvas);
+    if (s) {
+      activeStop = s.id;
+      document.querySelectorAll('.route-stop').forEach(el => el.classList.remove('active-stop'));
+      const el = document.getElementById('rs-' + s.id);
+      if (el) { el.classList.add('active-stop'); el.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+    }
+  }
+
+  function mapZoom(factor) {
+    mapScale = Math.min(3, Math.max(0.5, mapScale * factor));
+    const canvas = document.getElementById('map-canvas');
+    if (canvas) drawMap(canvas);
+  }
+  function mapReset() {
+    mapScale = 1; mapOffX = 0; mapOffY = 0;
+    const canvas = document.getElementById('map-canvas');
+    if (canvas) drawMap(canvas);
+  }
+
+  // Build route stop list
+  function buildRouteSidebar() {
+    const list = document.getElementById('route-stops-list');
+    if (!list || list.children.length > 0) return;
+    STOPS.forEach((s, i) => {
+      const div = document.createElement('div');
+      div.className = 'route-stop' + (s.status === 'current' ? ' active-stop' : '');
+      div.id = 'rs-' + s.id;
+      div.onclick = () => {
+        document.querySelectorAll('.route-stop').forEach(el => el.classList.remove('active-stop'));
+        div.classList.add('active-stop');
+      };
+      const statusLabel = { done:'Done', current:'In progress', next:'Up next', later:'Scheduled' }[s.status];
+      div.innerHTML = `
+        <div class="stop-num ${s.status}">${s.status === 'done' ? '' : i + 1}</div>
+        <div class="stop-info">
+          <div class="stop-name">${s.name}</div>
+          <div class="stop-addr">${s.addr}</div>
+          <div class="stop-meta">
+            <span class="stop-tag">${s.time}</span>
+            <span class="stop-tag">${s.size}</span>
+            <span class="stop-tag">${statusLabel}</span>
+          </div>
+        </div>
+        <div class="stop-price">£${s.price}</div>
+        ${i < STOPS.length - 1 ? '<div class="stop-connector"></div>' : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function runOptimise() {
+    const overlay = document.getElementById('optimise-overlay');
+    const badge = document.getElementById('savings-badge');
+    overlay.classList.add('show');
+    badge.style.display = 'none';
+    setTimeout(() => {
+      badge.style.display = 'block';
+      document.querySelector('.optimise-text').textContent = 'Route optimised!';
+      document.querySelector('.optimise-sub').textContent = 'Traffic & clustering applied';
+      // Update stats display
+      document.querySelector('.route-stats-bar .route-stat:first-child .route-stat-val').textContent = '9.1mi';
+      document.querySelector('.route-stats-bar .route-stat:nth-child(2) .route-stat-val').textContent = '24min';
+    }, 2200);
+    setTimeout(() => overlay.classList.remove('show'), 4000);
+  }
+
+  // ══════════════════════════════════════
+  // CREW MOBILE VIEW
+  // ══════════════════════════════════════
+  let crewMapInited = false;
+  let completedJobs = new Set([1]);
+
+  function initCrewMap() {
+    buildCrewJobs();
+    const canvas = document.getElementById('crew-map-canvas');
+    if (!canvas || crewMapInited) return;
+    crewMapInited = true;
+    const wrap = canvas.parentElement;
+    canvas.width = wrap.offsetWidth;
+    canvas.height = wrap.offsetHeight;
+    drawCrewMap(canvas);
+  }
+
+  function drawCrewMap(canvas) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Dark map background
+    ctx.fillStyle = '#1a2e1e'; ctx.fillRect(0, 0, W, H);
+    // Streets
+    ctx.strokeStyle = '#243d28'; ctx.lineWidth = 6;
+    const streetLines = [
+      [{x:0,y:0.4},{x:1,y:0.4}], [{x:0,y:0.7},{x:1,y:0.65}],
+      [{x:0.25,y:0},{x:0.3,y:1}], [{x:0.6,y:0},{x:0.55,y:1}],
+      [{x:0,y:0.55},{x:1,y:0.52}],
+    ];
+    streetLines.forEach(r => {
+      ctx.beginPath();
+      ctx.moveTo(r[0].x * W, r[0].y * H);
+      ctx.lineTo(r[1].x * W, r[1].y * H);
+      ctx.stroke();
+    });
+    // Route glow
+    ctx.beginPath();
+    ctx.moveTo(0.08 * W, 0.5 * H);
+    STOPS.forEach(s => ctx.lineTo(s.x * W * (W / 1200), s.y * H));
+    ctx.strokeStyle = 'rgba(45,186,96,0.3)'; ctx.lineWidth = 8; ctx.stroke();
+    ctx.strokeStyle = '#2dba60'; ctx.lineWidth = 2.5;
+    ctx.setLineDash([6, 3]); ctx.stroke(); ctx.setLineDash([]);
+
+    // Stops
+    STOPS.forEach((s, i) => {
+      const px = s.x * W * (W / 1200);
+      const py = s.y * H;
+      const clamp_px = Math.max(16, Math.min(W - 16, px));
+      const clamp_py = Math.max(16, Math.min(H - 16, py));
+      const col = s.status === 'done' ? '#555' : s.status === 'current' ? '#2dba60' : '#1a6b35';
+      ctx.beginPath(); ctx.arc(clamp_px, clamp_py, 10, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = 'white'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(s.status === 'done' ? '' : i + 1, clamp_px, clamp_py);
+    });
+    // Current location pulse
+    const cur = STOPS.find(s => s.status === 'current');
+    if (cur) {
+      const px = Math.max(16, Math.min(W - 16, cur.x * W * (W / 1200)));
+      const py = Math.max(16, Math.min(H - 16, cur.y * H));
+      ctx.beginPath(); ctx.arc(px, py, 18, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(45,186,96,0.2)'; ctx.fill();
+    }
+  }
+
+  function buildCrewJobs() {
+    const list = document.getElementById('crew-jobs-list');
+    if (!list || list.dataset.built) return;
+    list.dataset.built = '1';
+    STOPS.forEach((s, i) => {
+      const isDone = completedJobs.has(s.id);
+      const isCurrent = s.status === 'current';
+      const div = document.createElement('div');
+      div.className = 'crew-job-card' + (isCurrent ? ' current-job' : '');
+      div.id = 'cj-' + s.id;
+      const numClass = isDone ? 'done' : isCurrent ? 'now' : s.status === 'next' ? 'next' : 'later';
+      const numLabel = isDone ? '' : i + 1;
+      div.innerHTML = `
+        <div class="crew-job-header">
+          <div class="job-stop-num ${numClass}">${numLabel}</div>
+          <div class="crew-job-info">
+            <div class="crew-job-name">${s.name}</div>
+            <div class="crew-job-addr">${s.addr}</div>
+            <div class="crew-job-tags">
+              <span class="crew-tag time"> ${s.time}</span>
+              <span class="crew-tag size"> ${s.size}</span>
+              ${isCurrent ? '<span class="crew-tag green">Now</span>' : ''}
+              ${isDone ? '<span class="crew-tag green">Done</span>' : ''}
+            </div>
+          </div>
+          <div class="crew-job-price">£${s.price}</div>
+        </div>
+        ${isDone
+          ? `<div class="done-strip"> Completed · Photo uploaded · Payment queued</div>`
+          : isCurrent
+            ? `<div class="crew-job-actions">
+                <button class="crew-btn primary" onclick="markDone(${s.id})">Mark complete</button>
+                <button class="crew-btn ghost">Navigate</button>
+               </div>`
+            : `<div class="crew-job-actions">
+                <button class="crew-btn ghost" style="flex:none;padding:11px 16px"> Directions</button>
+                <button class="crew-btn ghost">Call</button>
+               </div>`
+        }
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function markDone(id) {
+    completedJobs.add(id);
+    // Rebuild crew jobs
+    const list = document.getElementById('crew-jobs-list');
+    list.innerHTML = ''; delete list.dataset.built;
+    // Advance next stop
+    const idx = STOPS.findIndex(s => s.id === id);
+    STOPS[idx].status = 'done';
+    if (STOPS[idx + 1]) STOPS[idx + 1].status = 'current';
+    if (STOPS[idx + 2]) STOPS[idx + 2].status = 'next';
+    buildCrewJobs();
+    // Update counter
+    const doneEl = document.getElementById('crew-done-count');
+    if (doneEl) doneEl.textContent = completedJobs.size;
+    // Redraw map
+    const canvas = document.getElementById('crew-map-canvas');
+    if (canvas) drawCrewMap(canvas);
+  }
+
+  // Close modal on overlay click
+  document.getElementById('modal-add').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+
+  // ══════════════════════════════════════
+  // Override showPage to init map lazily
+  const _origShowPage = window.showPage || showPage;
+  window.showPage = function(id) {
+    _origShowPage(id);
+    if (id === 'maps') setTimeout(() => { buildRouteSidebar(); initFullRouteMap(); }, 50);
+    if (id === 'admin') setTimeout(() => initAdminMiniMap(), 50);
+    if (id === 'crew') initCrewMap();
+  };
+
+  // ══════════════════════════════════════
+  // GOOGLE MAPS — shared state
+  // ══════════════════════════════════════
+  let gmapsLoaded = false;
+  let lawnMap = null, lawnDrawingManager = null, lawnPolygon = null;
+  let fullRouteMap = null, adminMiniMap = null;
+  let routeMarkers = [], routePolyline = null;
+
+  const STOP_DATA = [
+    { name:'Sarah Johnson',  addr:'14 Oak Avenue, London SW4',  lat:51.4589, lng:-0.1294, price:'£45', time:'8:00 AM',  status:'done'    },
+    { name:'Mike Kowalski',  addr:'7 Elm Close, London SW2',    lat:51.4612, lng:-0.1178, price:'£60', time:'9:30 AM',  status:'current' },
+    { name:'Rachel Pierce',  addr:'3 Birch Road, London SW4',   lat:51.4601, lng:-0.1332, price:'£35', time:'11:00 AM', status:'next'    },
+    { name:'David Williams', addr:'22 Pine Street, London SW3', lat:51.4556, lng:-0.1244, price:'£45', time:'1:00 PM',  status:'later'   },
+    { name:'Anna Lawson',    addr:'9 Cedar Lane, London SW5',   lat:51.4578, lng:-0.1389, price:'£60', time:'2:30 PM',  status:'later'   },
+  ];
+
+  function loadGoogleMaps(callback) {
+    if (gmapsLoaded) { callback(); return; }
+    if (window._gmapsLoading) { window._gmapsQueue = window._gmapsQueue || []; window._gmapsQueue.push(callback); return; }
+    window._gmapsLoading = true;
+    window._gmapsQueue = [callback];
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
+    script.async = true;
+    window.onGmapsReady = () => {
+      gmapsLoaded = true;
+      window._gmapsLoading = false;
+      (window._gmapsQueue || []).forEach(fn => fn());
+      window._gmapsQueue = [];
+    };
+    document.head.appendChild(script);
+  }
+
+  // ── FULL ROUTE MAP (maps page) ────────────────────────────
+  function initFullRouteMap() {
+    const el = document.getElementById('full-route-map');
+    if (!el || fullRouteMap) return;
+    loadGoogleMaps(() => {
+      const centre = { lat: 51.458, lng: -0.128 };
+      fullRouteMap = new google.maps.Map(el, {
+        center: centre, zoom: 14,
+        mapTypeId: 'roadmap',
+        styles: greenMapStyles(),
+        disableDefaultUI: true,
+        zoomControl: true,
+      });
+
+      const infoWindow = new google.maps.InfoWindow();
+      const colours = { done:'#9e9e9e', current:'#2dba60', next:'#1a6b35', later:'#0d3d1e' };
+      const path = [];
+
+      // Depot marker
+      new google.maps.Marker({
+        position: { lat: 51.450, lng: -0.140 },
+        map: fullRouteMap,
+        title: 'Depot',
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10,
+          fillColor: '#e8ff5a', fillOpacity: 1, strokeColor: '#0d3d1e', strokeWeight: 2 },
+        label: { text: '', fontSize: '14px' },
+        zIndex: 10,
+      });
+      path.push({ lat: 51.450, lng: -0.140 });
+
+      STOP_DATA.forEach((s, i) => {
+        const pos = { lat: s.lat, lng: s.lng };
+        path.push(pos);
+        const marker = new google.maps.Marker({
+          position: pos, map: fullRouteMap,
+          title: s.name,
+          label: { text: String(i + 1), color: 'white', fontWeight: 'bold', fontSize: '12px' },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: s.status === 'current' ? 20 : 15,
+            fillColor: colours[s.status],
+            fillOpacity: 1, strokeColor: 'white', strokeWeight: 2,
+          },
+          zIndex: s.status === 'current' ? 20 : 5,
+        });
+        marker.addListener('click', () => {
+          infoWindow.setContent(`
+            <div style="font-family:Inter,sans-serif;padding:4px">
+              <div style="font-weight:700;font-size:15px;color:#0d3d1e">${s.name}</div>
+              <div style="font-size:13px;color:#666;margin:4px 0">${s.addr}</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <span style="background:#e8f5e9;color:#1a5c2a;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600">${s.time}</span>
+                <span style="background:#0d3d1e;color:white;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:700">${s.price}</span>
+              </div>
+            </div>
+          `);
+          infoWindow.open(fullRouteMap, marker);
+        });
+        routeMarkers.push(marker);
+      });
+
+      // Route polyline
+      routePolyline = new google.maps.Polyline({
+        path, map: fullRouteMap,
+        strokeColor: '#2dba60', strokeOpacity: 0.8, strokeWeight: 3,
+        icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3 }, repeat: '80px' }],
+      });
+    });
+  }
+
+  // ── ADMIN MINI MAP ────────────────────────────────────────
+  function initAdminMiniMap() {
+    const el = document.getElementById('admin-mini-map');
+    if (!el || adminMiniMap) return;
+    loadGoogleMaps(() => {
+      adminMiniMap = new google.maps.Map(el, {
+        center: { lat: 51.458, lng: -0.128 }, zoom: 13,
+        mapTypeId: 'roadmap',
+        styles: greenMapStyles(),
+        disableDefaultUI: true,
+        gestureHandling: 'none',
+      });
+      const colours = { done:'#9e9e9e', current:'#2dba60', next:'#1a6b35', later:'#0d3d1e' };
+      const path = [{ lat: 51.450, lng: -0.140 }];
+      STOP_DATA.forEach((s, i) => {
+        path.push({ lat: s.lat, lng: s.lng });
+        new google.maps.Marker({
+          position: { lat: s.lat, lng: s.lng }, map: adminMiniMap,
+          label: { text: String(i+1), color:'white', fontWeight:'bold', fontSize:'10px' },
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12,
+            fillColor: colours[s.status], fillOpacity:1, strokeColor:'white', strokeWeight:2 },
+        });
+      });
+      new google.maps.Polyline({ path, map: adminMiniMap,
+        strokeColor:'#2dba60', strokeOpacity:0.7, strokeWeight:2 });
+    });
+  }
+
+  // ── LAWN SIZER (booking step 2) ───────────────────────────
+  // ── HERO PANEL FUNCTIONS ─────────────────────────────
+  function heroLookup() {
+    const q = document.getElementById('hero-addr-input').value.trim();
+    const status = document.getElementById('hero-addr-status');
+    if (!q) return;
+    status.textContent = 'Searching...';
+    status.style.color = 'var(--green-mid)';
+    loadGoogleMaps(() => {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: q + ', UK' }, (results, gStatus) => {
+        if (gStatus !== 'OK' || !results || !results[0]) {
+          status.textContent = ' Not found — try a postcode';
+          status.style.color = 'var(--warn)'; return;
+        }
+        const r = results[0];
+        const lat = r.geometry.location.lat(), lng = r.geometry.location.lng();
+        let pc = '';
+        r.address_components?.forEach(c => { if (c.types.includes('postal_code')) pc = c.long_name; });
+        bookData.lat = lat; bookData.lng = lng;
+        bookData.address = r.formatted_address; bookData.postcode = pc;
+        document.getElementById('addr-search-input').value = r.formatted_address;
+        document.getElementById('addr-street').value = r.formatted_address;
+        document.getElementById('addr-postcode').value = pc;
+        document.getElementById('addr-lat').value = lat;
+        document.getElementById('addr-lng').value = lng;
+        status.textContent = ' Found! Now head to Book a Cut to map your lawn';
+        status.style.color = 'var(--green-mid)';
+      });
+    });
+  }
+
+  function heroStartBooking() {
+    showPage('book');
+    setTab(document.querySelectorAll('.nav-tab')[1]);
+    const heroInput = document.getElementById('hero-addr-input');
+    if (heroInput && heroInput.value) {
+      document.getElementById('addr-search-input').value = heroInput.value;
+    }
+  }
+
+  // ── BOOKING STEP NAVIGATION ───────────────────────────
+  function bookNextStep(n) {
+    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.progress-step').forEach((p, i) => {
+      p.classList.remove('active', 'done');
+      if (i + 1 < n) p.classList.add('done');
+      else if (i + 1 === n) p.classList.add('active');
+    });
+    // Update step labels
+    ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.style.color = (i + 1 === n) ? 'var(--green-mid)' : 'var(--ink-light)';
+      if (el) el.style.fontWeight = (i + 1 === n) ? '600' : '400';
+    });
+    const stepId = n <= 3 ? 'step-' + n : 'step-success';
+    const el = document.getElementById(stepId);
+    if (el) el.classList.add('active');
+
+    if (n === 2) {
+      buildDateGrid();
+      const sizeLabels = {small:'Small garden',medium:'Medium garden',large:'Large garden',xl:'XL garden'};
+      document.getElementById('s2-size-label').textContent = sizeLabels[bookData.size] || 'Your garden';
+      document.getElementById('s2-price-label').textContent = '£' + bookData.price;
+    }
+    if (n === 3) {
+      const sizeLabels = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
+      document.getElementById('conf-size').textContent = sizeLabels[bookData.size] || 'Garden cut';
+      document.getElementById('conf-area').textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
+      document.getElementById('conf-freq').textContent = bookData.freq || 'Fortnightly';
+      document.getElementById('conf-dt').textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
+      // Full address breakdown
+      const addrEl = document.getElementById('conf-addr');
+      if (addrEl) {
+        addrEl.innerHTML = bookData.address || 'Your address';
+        if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
+      }
+      const notesEl = document.getElementById('conf-notes-row');
+      const notes = document.getElementById('addr-notes')?.value;
+      if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
+      const notesVal = document.getElementById('conf-notes');
+      if (notesVal && notes) notesVal.textContent = notes;
+      document.getElementById('conf-price').textContent = '£' + (bookData.price || 45);
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function confirmBooking() {
+    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
+    document.getElementById('step-success').classList.add('active');
+    document.getElementById('booking-ref').textContent = 'NG-' + Math.floor(1000 + Math.random() * 9000);
+    window.scrollTo(0, 0);
+  }
+
+  function goToStepTwo() {
+    bookNextStep(2);
+    // Update address banner
+    const banner = document.getElementById('step2-addr-display');
+    if (banner) banner.textContent = bookData.address || '—';
+    const hint = document.getElementById('step2-map-hint');
+    // Auto-load map if we have coords
+    if (bookData.lat && bookData.lng) {
+      if (hint) hint.style.display = 'none';
+      setTimeout(() => {
+        document.getElementById('lawn-sizer-wrap').style.display = 'block';
+        initLawnSizer(bookData.lat, bookData.lng);
+      }, 150);
+    } else {
+      if (hint) hint.textContent = 'Please go back and enter your address first.';
+    }
+  }
+
+  function bookNextStep(n) {
+    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+    // Progress bar — 3 visual steps: 1=address, 2=map, 3=date+confirm
+    const visualStep = n <= 2 ? n : n - 1; // steps 3&4 share visual bar
+    document.querySelectorAll('.progress-step').forEach((p, i) => {
+      p.classList.remove('active', 'done');
+      if (i + 1 < visualStep) p.classList.add('done');
+      else if (i + 1 === visualStep) p.classList.add('active');
+    });
+    // Step labels
+    const labels = ['step-label-1','step-label-2','step-label-3'];
+    labels.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
+      el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
+    });
+    // Show the right step
+    const stepId = n <= 4 ? 'step-' + n : 'step-success';
+    const el = document.getElementById(stepId);
+    if (el) el.classList.add('active');
+
+    if (n === 3) {
+      buildDateGrid();
+      const sizeLabels = {small:'Small garden',medium:'Medium garden',large:'Large garden',xl:'XL garden'};
+      const s2size = document.getElementById('s2-size-label');
+      const s2price = document.getElementById('s2-price-label');
+      if (s2size) s2size.textContent = sizeLabels[bookData.size] || 'Your garden';
+      if (s2price) s2price.textContent = '£' + (bookData.price || 45);
+    }
+    if (n === 4) {
+      const sizeLabels = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
+      const confSize = document.getElementById('conf-size');
+      if (confSize) confSize.textContent = sizeLabels[bookData.size] || 'Garden cut';
+      const confArea = document.getElementById('conf-area');
+      if (confArea) confArea.textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
+      const confFreq = document.getElementById('conf-freq');
+      if (confFreq) confFreq.textContent = bookData.freq || 'Fortnightly';
+      const confDt = document.getElementById('conf-dt');
+      if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
+      const addrEl = document.getElementById('conf-addr');
+      if (addrEl) {
+        addrEl.innerHTML = bookData.address || 'Your address';
+        if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
+      }
+      const notesEl = document.getElementById('conf-notes-row');
+      const notes = document.getElementById('addr-notes')?.value;
+      if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
+      const notesVal = document.getElementById('conf-notes');
+      if (notesVal && notes) notesVal.textContent = notes;
+      const confPrice = document.getElementById('conf-price');
+      if (confPrice) confPrice.textContent = '£' + (bookData.price || 45);
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function lookupAddress() {
+    const query = document.getElementById('addr-search-input').value.trim();
+    if (!query) return;
+    const status = document.getElementById('addr-search-status');
+    const suggestions = document.getElementById('addr-suggestions');
+    status.textContent = 'Searching...';
+    status.style.color = 'var(--green-mid)';
+
+    loadGoogleMaps(() => {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: query + ', UK' }, (results, gStatus) => {
+        if (gStatus !== 'OK' || !results || results.length === 0) {
+          status.textContent = ' Not found — try adding more detail or just use the postcode';
+          status.style.color = 'var(--warn)';
+          return;
+        }
+
+        if (results.length === 1) {
+          // Only one result — use it directly
+          selectAddress(results[0]);
+        } else {
+          // Multiple results — show list to pick from
+          suggestions.style.display = 'block';
+          suggestions.innerHTML = results.slice(0, 5).map((r, i) => `
+            <div onclick="selectAddressById(${i})"
+              style="padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border);
+              font-size:14px;transition:background 0.15s"
+              onmouseover="this.style.background='var(--green-pale)'"
+              onmouseout="this.style.background='white'">
+               ${r.formatted_address}
+            </div>
+          `).join('');
+          window._geocodeResults = results;
+          status.textContent = 'Select your address from the list below';
+          status.style.color = 'var(--ink-light)';
+        }
+      });
+    });
+  }
+
+  window.selectAddressById = function(i) {
+    selectAddress(window._geocodeResults[i]);
+    document.getElementById('addr-suggestions').style.display = 'none';
+  };
+
+  function selectAddress(result) {
+    const lat = result.geometry.location.lat();
+    const lng = result.geometry.location.lng();
+    const street = result.formatted_address;
+    let postcode = '';
+    result.address_components?.forEach(c => {
+      if (c.types.includes('postal_code')) postcode = c.long_name;
+    });
+
+    document.getElementById('addr-street').value = street;
+    document.getElementById('addr-postcode').value = postcode;
+    document.getElementById('addr-lat').value = lat;
+    document.getElementById('addr-lng').value = lng;
+    document.getElementById('addr-search-status').textContent = ' ' + street;
+    document.getElementById('addr-search-status').style.color = 'var(--green-mid)';
+    document.getElementById('addr-suggestions').style.display = 'none';
+
+    bookData.lat = lat; bookData.lng = lng;
+    bookData.address = street; bookData.postcode = postcode;
+
+    document.getElementById('lawn-sizer-wrap').style.display = 'block';
+    setTimeout(() => initLawnSizer(lat, lng), 200);
+  }
+
+  function lookupPostcode() { lookupAddress(); }
+  function initAddressAutocomplete() {} // no-op, replaced by lookupAddress
+  function initLawnSizer(lat, lng) {
+    const el = document.getElementById('lawn-map');
+    if (!el) return;
+    lawnMap = null; // reset so map reinitialises on new address
+    lawnMap = new google.maps.Map(el, {
+      center: { lat, lng }, zoom: 18,
+      mapTypeId: 'satellite', tilt: 0,
+      disableDefaultUI: true, zoomControl: true,
+    });
+
+    if (lawnDrawingManager) lawnDrawingManager.setMap(null);
+    lawnDrawingManager = new google.maps.drawing.DrawingManager({
+      drawingMode: google.maps.drawing.OverlayType.POLYGON,
+      drawingControl: false,
+      polygonOptions: {
+        fillColor: '#2dba60', fillOpacity: 0.35,
+        strokeColor: '#2dba60', strokeWeight: 2,
+        clickable: true, editable: true, zIndex: 1,
+      },
+    });
+    lawnDrawingManager.setMap(lawnMap);
+
+    google.maps.event.addListener(lawnDrawingManager, 'polygoncomplete', (poly) => {
+      lawnPolygon = poly;
+      lawnDrawingManager.setDrawingMode(null);
+      document.getElementById('lawn-draw-hint').style.display = 'none';
+      updateLawnArea(poly);
+
+      poly.getPath().addListener('set_at', () => updateLawnArea(poly));
+      poly.getPath().addListener('insert_at', () => updateLawnArea(poly));
+    });
+  }
+
+  function updateLawnArea(poly) {
+    const area = google.maps.geometry.spherical.computeArea(poly.getPath());
+    const m2 = Math.round(area * 10) / 10;
+    const { size, price } = sizeFromArea(m2);
+
+    document.getElementById('lawn-area-text').textContent = `${m2}m²`;
+    document.getElementById('lawn-size-text').textContent = `${size} garden`;
+    document.getElementById('lawn-price-text').textContent = `£${price}`;
+    document.getElementById('lawn-result').style.display = 'flex';
+
+    // Update booking data
+    bookData.gardenAreaM2 = m2;
+    bookData.price = price;
+    bookData.size = size.toLowerCase();
+
+    // Also update step 1 selection to match
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    const sizeKey = size.toLowerCase();
+    document.querySelector(`[onclick*="'${sizeKey}'"]`)?.classList.add('selected');
+  }
+
+  function sizeFromArea(m2) {
+    let price;
+    if (m2 <= 40) {
+      price = 35; // flat minimum
+    } else if (m2 <= 80) {
+      price = Math.round((35 + (m2 - 40) * 0.35) / 5) * 5; // £0.35/m² above 40
+    } else if (m2 <= 150) {
+      price = Math.round((49 + (m2 - 80) * 0.22) / 5) * 5; // £0.22/m² above 80
+    } else if (m2 <= 500) {
+      price = Math.round((64 + (m2 - 150) * 0.12) / 5) * 5; // £0.12/m² above 150
+    } else if (m2 <= 2000) {
+      price = Math.round((106 + (m2 - 500) * 0.06) / 5) * 5; // £0.06/m² above 500
+    } else {
+      price = Math.round((196 + (m2 - 2000) * 0.03) / 5) * 5; // £0.03/m² above 2000
+    }
+    // Size label
+    let size;
+    if (m2 <= 40) size = 'Small';
+    else if (m2 <= 80) size = 'Medium';
+    else if (m2 <= 150) size = 'Large';
+    else size = 'XL';
+    return { size, price };
+  }
+
+  function resetLawnPolygon() {
+    if (lawnPolygon) { lawnPolygon.setMap(null); lawnPolygon = null; }
+    if (lawnDrawingManager) lawnDrawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+    document.getElementById('lawn-result').style.display = 'none';
+    document.getElementById('lawn-draw-hint').style.display = 'block';
+  }
+
+  // ── GREEN MAP STYLE ───────────────────────────────────────
+  function greenMapStyles() {
+    return [
+      { featureType:'all', elementType:'geometry', stylers:[{color:'#e8f2ea'}] },
+      { featureType:'road', elementType:'geometry', stylers:[{color:'#ffffff'}] },
+      { featureType:'road', elementType:'geometry.stroke', stylers:[{color:'#d4e8da'}] },
+      { featureType:'water', elementType:'geometry', stylers:[{color:'#c8dfe0'}] },
+      { featureType:'poi.park', elementType:'geometry', stylers:[{color:'#c5e8c8'}] },
+      { featureType:'landscape.natural', elementType:'geometry', stylers:[{color:'#ddeedd'}] },
+      { featureType:'administrative', elementType:'labels.text.fill', stylers:[{color:'#1a5c2a'}] },
+      { featureType:'road', elementType:'labels.text.fill', stylers:[{color:'#3d5447'}] },
+      { featureType:'all', elementType:'labels.icon', stylers:[{visibility:'off'}] },
+    ];
+  }
+
+  // Auto-init admin mini map when admin page loads
+  setTimeout(() => {
+    if (document.getElementById('page-admin').classList.contains('active')) {
+      initAdminMiniMap();
+    }
+  }, 500);
+
+</script>
+</body>
+</html>

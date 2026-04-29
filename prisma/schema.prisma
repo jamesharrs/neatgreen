@@ -1,0 +1,166 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────
+enum GardenSize {
+  SMALL   // up to 40m²  - £35
+  MEDIUM  // 40-80m²     - £45
+  LARGE   // 80-150m²    - £60
+  XL      // 150m²+      - £90+
+}
+
+enum Frequency {
+  ONE_OFF
+  FORTNIGHTLY
+  MONTHLY
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum UserRole {
+  ADMIN
+  CREW
+  CUSTOMER
+}
+
+// ─── USERS (admin + crew login) ───────────────────────────
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole  @default(CREW)
+  phone        String?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignedJobs Job[]     @relation("CrewMember")
+
+  @@map("users")
+}
+
+// ─── CUSTOMERS ────────────────────────────────────────────
+model Customer {
+  id              String      @id @default(cuid())
+  name            String
+  email           String      @unique
+  phone           String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  active          Boolean     @default(true)
+
+  // Address
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  postcode        String
+  latitude        Float?
+  longitude       Float?
+
+  // Lawn details (from Maps sizing tool)
+  gardenSize      GardenSize  @default(MEDIUM)
+  gardenAreaM2    Float?      // actual measured area in m²
+  gardenNotes     String?     // access notes, gate codes etc.
+
+  // Subscription
+  frequency       Frequency   @default(FORTNIGHTLY)
+  pricePerCut     Int         // in pence e.g. 4500 = £45
+  subscriptionActive Boolean  @default(false)
+  stripeCustomerId  String?   @unique
+
+  bookings        Booking[]
+
+  @@map("customers")
+}
+
+// ─── BOOKINGS ─────────────────────────────────────────────
+model Booking {
+  id           String        @id @default(cuid())
+  reference    String        @unique @default(cuid()) // e.g. GR-4821
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  customerId   String
+  customer     Customer      @relation(fields: [customerId], references: [id])
+
+  scheduledDate DateTime
+  scheduledTime String        // e.g. "09:00"
+
+  gardenSize   GardenSize
+  frequency    Frequency
+  priceInPence Int
+
+  status       BookingStatus @default(PENDING)
+  notes        String?
+
+  // Stripe
+  stripePaymentIntentId String?
+  paidAt               DateTime?
+
+  job          Job?
+
+  @@map("bookings")
+}
+
+// ─── JOBS (operational record of each visit) ──────────────
+model Job {
+  id          String      @id @default(cuid())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  bookingId   String      @unique
+  booking     Booking     @relation(fields: [bookingId], references: [id])
+
+  crewId      String?
+  crew        User?       @relation("CrewMember", fields: [crewId], references: [id])
+
+  routeId     String?
+  route       Route?      @relation(fields: [routeId], references: [id])
+  routeOrder  Int?        // position in the day's route
+
+  // Completion
+  startedAt   DateTime?
+  completedAt DateTime?
+  photoUrl    String?     // completion photo
+  crewNotes   String?
+  rating      Int?        // customer rating 1-5
+
+  // Twilio SMS sent flags
+  reminderSent    Boolean @default(false)
+  etaSent         Boolean @default(false)
+  completionSent  Boolean @default(false)
+
+  @@map("jobs")
+}
+
+// ─── ROUTES (a day's optimised schedule) ──────────────────
+model Route {
+  id           String    @id @default(cuid())
+  date         DateTime  @db.Date
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  crewId       String?
+  optimised    Boolean   @default(false)
+  totalMiles   Float?
+  totalMinutes Int?
+
+  jobs         Job[]
+
+  @@map("routes")
+}
