@@ -2039,7 +2039,6 @@
     const canvas = document.getElementById('crew-map-canvas');
     if (!canvas || crewMapInited) return;
     crewMapInited = true;
-  // wrap declared above
     canvas.width = wrap.offsetWidth;
     canvas.height = wrap.offsetHeight;
     drawCrewMap(canvas);
@@ -2453,7 +2452,6 @@
     let total = base;
     if (bookData.extras.overgrown) total = Math.round(total * 1.5);
     if (bookData.extras.clippings) total += 10;
-  // el declared above
     if (el) el.textContent = '£' + total;
     bookData.totalPrice = total;
   }
@@ -2470,7 +2468,7 @@
     if (banner) banner.textContent = bookData.address;
     const hint = document.getElementById('step2-map-hint');
     if (hint) hint.style.display = 'none';
-  // wrap declared above
+    const wrap = document.getElementById('lawn-sizer-wrap');
     if (wrap) wrap.style.display = 'block';
     // Delay to ensure DOM is fully rendered and visible before map init
     lawnMap = null;
@@ -2497,19 +2495,17 @@
       else if (i + 1 === visualStep) p.classList.add('active');
     });
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
-  // el declared above
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
-  // el declared above
     if (el) el.classList.add('active');
     if (n === 3) {
       buildDateGrid();
       const sizeLabels = {small:'Small garden',medium:'Medium garden',large:'Large garden',xl:'XL garden'};
       const s2size = document.getElementById('s2-size-label');
       const s2price = document.getElementById('s2-price-label');
-      if (s2size) s2size.textContent = sizeLabels[bookData.size] || 'Your garden';
+      if (s2size) s2size.textContent = sizeLabels3[bookData.size] || 'Your garden';
       if (s2price) s2price.textContent = '£' + bookData.price;
       updateLivePrice();
       // Show weather notice always — builds trust
@@ -2517,7 +2513,7 @@
       if (wn) wn.style.display = 'block';
     }
     if (n === 4) {
-
+      const sizeLabels4 = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
 
       const extras = [];
       if (bookData.extras.overgrown) extras.push('Overgrown surcharge');
@@ -2753,12 +2749,10 @@
     });
     // Update step labels
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
-  // el declared above
       if (el) el.style.color = (i + 1 === n) ? 'var(--green-mid)' : 'var(--ink-light)';
       if (el) el.style.fontWeight = (i + 1 === n) ? '600' : '400';
     });
     const stepId = n <= 3 ? 'step-' + n : 'step-success';
-  // el declared above
     if (el) el.classList.add('active');
 
     if (n === 2) {
@@ -2780,7 +2774,6 @@
         if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
       }
 
-  // notes declared above
       if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
 
       if (notesVal && notes) notesVal.textContent = notes;
@@ -2807,7 +2800,7 @@
       return;
     }
     if (hint) hint.style.display = 'none';
-  // wrap declared above
+    const wrap = document.getElementById('lawn-sizer-wrap');
     if (wrap) wrap.style.display = 'block';
     // Use longer delay to ensure step-2 is visible and map div has dimensions
     setTimeout(() => {
@@ -2818,38 +2811,36 @@
 
   function bookNextStep(n) {
     document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
-    // Progress bar — 3 visual steps: 1=address, 2=map, 3=date+confirm
- // steps 3&4 share visual bar
+    const visualStep = Math.min(n, 3);
     document.querySelectorAll('.progress-step').forEach((p, i) => {
       p.classList.remove('active', 'done');
       if (i + 1 < visualStep) p.classList.add('done');
       else if (i + 1 === visualStep) p.classList.add('active');
     });
-    // Step labels
-
+    const labels = ['step-label-1','step-label-2','step-label-3'];
     labels.forEach((id, i) => {
-  // el declared above
+      const el = document.getElementById(id);
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
     // Show the right step
-
-  // el declared above
-    if (el) el.classList.add('active');
+    const stepEl = document.getElementById('step-' + n);
+    if (stepEl) stepEl.classList.add('active');
 
     if (n === 3) {
       buildDateGrid();
+      const sizeLabels3 = {small:'Small garden',medium:'Medium garden',large:'Large garden',xl:'XL garden'};
+      const s2size = document.getElementById('s2-size-label');
+      const s2price = document.getElementById('s2-price-label');
 
-
-
-      if (s2size) s2size.textContent = sizeLabels[bookData.size] || 'Your garden';
+      if (s2size) s2size.textContent = sizeLabels3[bookData.size] || 'Your garden';
       if (s2price) s2price.textContent = '£' + (bookData.price || 45);
     }
     if (n === 4) {
+      const sizeLabels4 = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
 
-
-      if (confSize) confSize.textContent = sizeLabels[bookData.size] || 'Garden cut';
+      if (confSize) confSize.textContent = sizeLabels4[bookData.size] || 'Garden cut';
 
       if (confArea) confArea.textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
 
@@ -2862,7 +2853,6 @@
         if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
       }
 
-  // notes declared above
       if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
 
       if (notesVal && notes) notesVal.textContent = notes;
@@ -2875,7 +2865,6 @@
   function lookupAddress() {
     const query = document.getElementById('addr-search-input').value.trim();
     if (!query) return;
-  // status declared above
     const suggestions = document.getElementById('addr-suggestions');
     status.textContent = 'Searching...';
     status.style.color = 'var(--green-mid)';
