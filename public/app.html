@@ -2177,7 +2177,7 @@
     window._gmapsLoading = true;
     window._gmapsQueue = [callback];
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=geometry,places&loading=async&callback=onGmapsReady&v=beta`;
     script.async = true;
     window.onGmapsReady = () => {
       gmapsLoaded = true;
@@ -2542,7 +2542,7 @@
     window._gmapsLoading = true;
     window._gmapsQueue = [callback];
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=geometry,places&loading=async&callback=onGmapsReady&v=beta`;
     script.async = true;
     window.onGmapsReady = () => {
       gmapsLoaded = true;
@@ -2917,34 +2917,82 @@
   function initLawnSizer(lat, lng) {
     const el = document.getElementById('lawn-map');
     if (!el) return;
-    lawnMap = null; // reset so map reinitialises on new address
+
+    // Reset
+    if (lawnMap) { google.maps.event.clearInstanceListeners(lawnMap); }
+    if (lawnPolygon) { lawnPolygon.setMap(null); lawnPolygon = null; }
+    if (lawnDrawingManager) { lawnDrawingManager.setMap(null); lawnDrawingManager = null; }
+
     lawnMap = new google.maps.Map(el, {
       center: { lat, lng }, zoom: 18,
       mapTypeId: 'satellite', tilt: 0,
       disableDefaultUI: true, zoomControl: true,
+      gestureHandling: 'greedy',
     });
 
-    if (lawnDrawingManager) lawnDrawingManager.setMap(null);
-    lawnDrawingManager = new google.maps.drawing.DrawingManager({
-      drawingMode: google.maps.drawing.OverlayType.POLYGON,
-      drawingControl: false,
-      polygonOptions: {
+    // Click-to-draw polygon (no deprecated Drawing library)
+    let vertices = [];
+    let markers = [];
+    let previewPolyline = null;
+
+    function redrawPreview() {
+      if (previewPolyline) previewPolyline.setMap(null);
+      if (vertices.length < 2) return;
+      previewPolyline = new google.maps.Polyline({
+        path: [...vertices, vertices[0]],
+        strokeColor: '#2dba60', strokeWeight: 2,
+        strokeOpacity: 0.7, map: lawnMap,
+      });
+    }
+
+    function finishPolygon() {
+      if (vertices.length < 3) return;
+      if (previewPolyline) { previewPolyline.setMap(null); previewPolyline = null; }
+      markers.forEach(m => m.setMap(null)); markers = [];
+
+      lawnPolygon = new google.maps.Polygon({
+        paths: vertices,
         fillColor: '#2dba60', fillOpacity: 0.35,
         strokeColor: '#2dba60', strokeWeight: 2,
-        clickable: true, editable: true, zIndex: 1,
-      },
-    });
-    lawnDrawingManager.setMap(lawnMap);
+        editable: true, map: lawnMap,
+      });
 
-    google.maps.event.addListener(lawnDrawingManager, 'polygoncomplete', (poly) => {
-      lawnPolygon = poly;
-      lawnDrawingManager.setDrawingMode(null);
       document.getElementById('lawn-draw-hint').style.display = 'none';
-      updateLawnArea(poly);
+      updateLawnArea(lawnPolygon);
 
-      poly.getPath().addListener('set_at', () => updateLawnArea(poly));
-      poly.getPath().addListener('insert_at', () => updateLawnArea(poly));
+      lawnPolygon.getPath().addListener('set_at', () => updateLawnArea(lawnPolygon));
+      lawnPolygon.getPath().addListener('insert_at', () => updateLawnArea(lawnPolygon));
+
+      // Stop adding vertices
+      google.maps.event.clearListeners(lawnMap, 'click');
+    }
+
+    lawnMap.addListener('click', (e) => {
+      if (lawnPolygon) return; // already drawn
+      vertices.push(e.latLng);
+
+      // Add a small marker at each vertex
+      const marker = new google.maps.Marker({
+        position: e.latLng, map: lawnMap,
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 6,
+          fillColor: '#fff', fillOpacity: 1,
+          strokeColor: '#2dba60', strokeWeight: 2 },
+        draggable: false,
+      });
+      markers.push(marker);
+      redrawPreview();
     });
+
+    // Double-click to finish
+    lawnMap.addListener('dblclick', (e) => {
+      if (lawnPolygon) return;
+      e.stop(); // prevent zoom
+      if (vertices.length >= 3) finishPolygon();
+    });
+
+    // Update hint text
+    const hint = document.getElementById('lawn-draw-hint');
+    if (hint) hint.textContent = 'Click points around your lawn boundary — double-click to finish. Click Redraw to start again.';
   }
 
   function updateLawnArea(poly) {
