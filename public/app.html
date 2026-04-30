@@ -1149,8 +1149,8 @@
 
       <!-- Lawn sizer map -->
 
-      <div class="step-nav" style="margin-top:24px">
-        <button class="btn-next" onclick="goToStepTwo()">Continue — Map your garden →</button>
+      <div style="margin-top:16px;font-size:13px;color:var(--ink-light);text-align:center;padding:8px">
+        Select your address above to automatically load the satellite map
       </div>
     </div>
 
@@ -2418,78 +2418,72 @@
   // ── ADDRESS LOOKUP (postcodes.io) ────────────────────
   // ── ADDRESS LOOKUP ────────────────────────────────────
   // Uses postcodes.io (free, no key) + Google Geocoding for full address list
+  const IDEAL_KEY = 'ak_mol8xv30rYU3unRz1E8Kd2MLyhknZ';
+
   async function lookupPostcode() {
     const raw = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
     if (!raw) return;
-    // Format: insert space before last 3 chars
     const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
 
     const status = document.getElementById('addr-search-status');
-    status.textContent = 'Searching for addresses...';
+    status.textContent = 'Finding addresses...';
     status.style.color = 'var(--green-mid)';
     document.getElementById('addr-dropdown-wrap').style.display = 'none';
     document.getElementById('addr-confirmed').style.display = 'none';
     document.getElementById('addr-manual-wrap').style.display = 'none';
 
     try {
-      // Step 1: Validate postcode and get coords via postcodes.io (free, no key)
-      const res = await fetch('https://api.postcodes.io/postcodes/' + encodeURIComponent(raw));
-      const data = await res.json();
+      const r = await fetch(
+        `https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${IDEAL_KEY}`
+      );
+      const d = await r.json();
 
-      if (data.status !== 200 || !data.result) {
-        status.textContent = 'Postcode not found. Please check and try again.';
+      if (d.code !== 2000 || !d.result || !d.result.length) {
+        status.textContent = 'Postcode not found. Please enter your address manually.';
         status.style.color = 'var(--warn)';
         document.getElementById('addr-manual-wrap').style.display = 'block';
         return;
       }
 
-      const lat = data.result.latitude;
-      const lng = data.result.longitude;
-      bookData.lat = lat; bookData.lng = lng; bookData.postcode = pc;
+      const addresses = d.result;
+      // Use lat/lng from first address result
+      bookData.lat = addresses[0].latitude;
+      bookData.lng = addresses[0].longitude;
+      bookData.postcode = pc;
 
-      // Step 2: Get address list via Google Geocoding
-      loadGoogleMaps(() => {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: pc + ', UK' }, (results, gStatus) => {
-          if (gStatus !== 'OK' || !results || !results.length) {
-            // Fall back to just showing postcode with manual entry
-            status.textContent = 'Found postcode — please enter your full address below';
-            status.style.color = 'var(--green-mid)';
-            document.getElementById('addr-manual-wrap').style.display = 'block';
-            return;
-          }
+      const sel = document.getElementById('addr-select');
+      sel.innerHTML = '<option value="">— Choose your address —</option>';
 
-          const sel = document.getElementById('addr-select');
-          sel.innerHTML = '<option value="">— Choose your address —</option>';
-
-          results.forEach((r, i) => {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = r.formatted_address;
-            opt.dataset.lat = r.geometry.location.lat();
-            opt.dataset.lng = r.geometry.location.lng();
-            opt.dataset.addr = r.formatted_address;
-            sel.appendChild(opt);
-          });
-
-          // Always add manual option
-          const manOpt = document.createElement('option');
-          manOpt.value = 'manual';
-          manOpt.textContent = '— Enter address manually —';
-          sel.appendChild(manOpt);
-
-          document.getElementById('addr-dropdown-wrap').style.display = 'block';
-          status.textContent = 'Select your address below';
-          status.style.color = 'var(--green-mid)';
-        });
+      addresses.forEach((a, i) => {
+        const parts = [a.line_1, a.line_2, a.line_3, a.post_town]
+          .filter(p => p && p.trim());
+        const label = parts.join(', ') + ', ' + pc;
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = label;
+        opt.dataset.lat = a.latitude || addresses[0].latitude;
+        opt.dataset.lng = a.longitude || addresses[0].longitude;
+        opt.dataset.addr = label;
+        sel.appendChild(opt);
       });
+
+      // Manual entry fallback option
+      const manOpt = document.createElement('option');
+      manOpt.value = 'manual';
+      manOpt.textContent = '— My address is not listed —';
+      sel.appendChild(manOpt);
+
+      document.getElementById('addr-dropdown-wrap').style.display = 'block';
+      status.textContent = addresses.length + ' address' + (addresses.length !== 1 ? 'es' : '') + ' found at ' + pc;
+      status.style.color = 'var(--green-mid)';
     } catch(e) {
       console.error(e);
-      status.textContent = 'Error looking up postcode. Please enter your address manually.';
+      status.textContent = 'Error looking up postcode. Please enter manually.';
       status.style.color = 'var(--warn)';
       document.getElementById('addr-manual-wrap').style.display = 'block';
     }
   }
+
 
 
   function selectFromDropdown(sel) {
@@ -2507,11 +2501,8 @@
     document.getElementById('addr-postcode').value = bookData.postcode;
     document.getElementById('addr-lat').value = bookData.lat;
     document.getElementById('addr-lng').value = bookData.lng;
-    document.getElementById('addr-confirmed-text').textContent = bookData.address;
-    document.getElementById('addr-confirmed').style.display = 'block';
-    document.getElementById('addr-dropdown-wrap').style.display = 'none';
-    document.getElementById('addr-search-status').textContent = 'Address confirmed — click Continue to map your lawn';
-    document.getElementById('addr-search-status').style.color = 'var(--green-mid)';
+    // Jump straight to map — no extra step needed
+    goToStepTwo();
   }
 
   function showManualEntry() {
@@ -2528,8 +2519,8 @@
     document.getElementById('addr-confirmed-text').textContent = bookData.address;
     document.getElementById('addr-confirmed').style.display = 'block';
     document.getElementById('addr-manual-wrap').style.display = 'none';
-    document.getElementById('addr-search-status').textContent = 'Address confirmed — click Continue to map your lawn';
-    document.getElementById('addr-search-status').style.color = 'var(--green-mid)';
+    // Jump straight to map
+    goToStepTwo();
   }
 
   function resetAddress() {
