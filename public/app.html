@@ -2280,10 +2280,10 @@
   function heroStartBooking() {
     showPage('book');
     setTab(document.querySelectorAll('.nav-tab')[1]);
-    const heroInput = document.getElementById('hero-addr-input');
-    if (heroInput && heroInput.value) {
-      document.getElementById('addr-search-input').value = heroInput.value;
-    }
+    setTimeout(() => {
+      const el = document.getElementById('postcode-input');
+      if (el && bookData.postcode) el.value = bookData.postcode;
+    }, 100);
   }
 
   // ── BOOKING STEP NAVIGATION ───────────────────────────
@@ -2419,7 +2419,9 @@
   const GETADDRESS_KEY = 'RBzop_3TQkm7iIlsG9nqLQ51768';
 
   async function lookupPostcode() {
-    const pc = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
+    const raw = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
+    // Format UK postcode: insert space before last 3 chars (e.g. EX203RA -> EX20 3RA)
+    const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
     if (!pc) return;
     const status = document.getElementById('addr-search-status');
     status.textContent = 'Searching...';
