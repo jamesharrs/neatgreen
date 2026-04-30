@@ -2234,6 +2234,7 @@
   // ══════════════════════════════════════
   let gmapsLoaded = false;
   let lawnMap = null, lawnDrawingManager = null, lawnPolygon = null;
+  let lawnHandles = [], lawnPreviewPoly = null; // module-level so resetLawnPolygon can clear them
   let fullRouteMap = null, adminMiniMap = null;
   let routeMarkers = [], routePolyline = null;
 
@@ -3030,8 +3031,11 @@
     if (result) result.style.display = 'none';
 
     let vertices = [];   // google.maps.LatLng[]
-    let handles = [];    // AdvancedMarkerElement[] — one per vertex, draggable
-    let previewPoly = null;
+    // Use module-level handles/previewPoly so resetLawnPolygon can clear them
+    lawnHandles.forEach(m => { try { m.map = null; } catch(e){} });
+    lawnHandles = [];
+    if (lawnPreviewPoly) { lawnPreviewPoly.setMap(null); lawnPreviewPoly = null; }
+    let handles = lawnHandles;  // alias
 
     function makeDot(filled) {
       const d = document.createElement('div');
@@ -3043,15 +3047,15 @@
     }
 
     function redraw() {
-      if (previewPoly) previewPoly.setMap(null);
+      if (lawnPreviewPoly) lawnPreviewPoly.setMap(null);
       if (vertices.length < 2) return;
-      previewPoly = new google.maps.Polygon({
+      lawnPreviewPoly = new google.maps.Polygon({
         paths: vertices,
         strokeColor: '#2dba60', strokeWeight: 2, strokeOpacity: 0.8,
         fillColor: '#2dba60', fillOpacity: vertices.length > 2 ? 0.2 : 0,
         map: lawnMap,
       });
-      if (vertices.length >= 3) updateLawnArea(previewPoly);
+      if (vertices.length >= 3) updateLawnArea(lawnPreviewPoly);
     }
 
     function addHandle(latLng, index) {
@@ -3068,7 +3072,7 @@
       marker.addListener('dragend', e => {
         vertices[index] = e.latLng;
         redraw();
-        if (vertices.length >= 3) updateLawnArea(previewPoly);
+        if (vertices.length >= 3) updateLawnArea(lawnPreviewPoly);
       });
       handles.push(marker);
       return marker;
@@ -3079,7 +3083,8 @@
       google.maps.event.clearListeners(lawnMap, 'click');
       google.maps.event.clearListeners(lawnMap, 'dblclick');
       if (hint) hint.textContent = 'Drag the dots to adjust your lawn boundary';
-      lawnPolygon = previewPoly; // promote to lawnPolygon
+      lawnPolygon = lawnPreviewPoly; // promote to lawnPolygon
+      lawnPreviewPoly = null;
       updateLawnArea(lawnPolygon);
     }
 
@@ -3148,9 +3153,19 @@
   }
 
   function resetLawnPolygon() {
+    // Clear polygon
     if (lawnPolygon) { lawnPolygon.setMap(null); lawnPolygon = null; }
-    document.getElementById('lawn-result').style.display = 'none';
-    document.getElementById('lawn-draw-hint').style.display = 'block';
+    // Clear preview poly
+    if (lawnPreviewPoly) { lawnPreviewPoly.setMap(null); lawnPreviewPoly = null; }
+    // Clear handles
+    lawnHandles.forEach(m => { try { m.map = null; } catch(e){} });
+    lawnHandles = [];
+    // Reset UI
+    const res = document.getElementById('lawn-result');
+    const hint = document.getElementById('lawn-draw-hint');
+    if (res) res.style.display = 'none';
+    if (hint) { hint.style.display = 'block'; hint.textContent = 'Click points around your lawn — double-click to finish'; }
+    // Restart drawing on same map
     if (bookData.lat && bookData.lng) {
       loadGoogleMaps(() => initLawnSizer(bookData.lat, bookData.lng));
     }
