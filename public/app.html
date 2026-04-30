@@ -2910,25 +2910,27 @@
     }
     if (n === 4) {
       const sizeLabels4 = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
+      const confSize = document.getElementById('conf-size');
+      const confArea = document.getElementById('conf-area');
+      const confFreq = document.getElementById('conf-freq');
+      const confDt = document.getElementById('conf-dt');
+      const addrEl = document.getElementById('conf-addr');
+      const notesEl = document.getElementById('conf-notes-row');
+      const notes = document.getElementById('addr-notes')?.value;
+      const notesVal = document.getElementById('conf-notes');
+      const confPrice = document.getElementById('conf-price');
 
       if (confSize) confSize.textContent = sizeLabels4[bookData.size] || 'Garden cut';
-
       if (confArea) confArea.textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
-
       if (confFreq) confFreq.textContent = bookData.freq || 'Fortnightly';
-
       if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
-
       if (addrEl) {
         addrEl.innerHTML = bookData.address || 'Your address';
         if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
       }
-
       if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
-
       if (notesVal && notes) notesVal.textContent = notes;
-
-      if (confPrice) confPrice.textContent = '£' + (bookData.price || 45);
+      if (confPrice) confPrice.textContent = '£' + (bookData.sundayPrice || bookData.totalPrice || bookData.price || 45);
     }
     window.scrollTo(0, 0);
   }
@@ -2936,16 +2938,15 @@
   function lookupAddress() {
     const query = document.getElementById('addr-search-input').value.trim();
     if (!query) return;
+    const status = document.getElementById('addr-search-status');
     const suggestions = document.getElementById('addr-suggestions');
-    status.textContent = 'Searching...';
-    status.style.color = 'var(--green-mid)';
+    if (status) { status.textContent = 'Searching...'; status.style.color = 'var(--green-mid)'; }
 
     loadGoogleMaps(() => {
-
+      const geocoder = new google.maps.Geocoder();
       geocoder.geocode({ address: query + ', UK' }, (results, gStatus) => {
         if (gStatus !== 'OK' || !results || results.length === 0) {
-          status.textContent = ' Not found — try adding more detail or just use the postcode';
-          status.style.color = 'var(--warn)';
+          if (status) { status.textContent = 'Not found — try a postcode instead'; status.style.color = 'var(--warn)'; }
           return;
         }
 
