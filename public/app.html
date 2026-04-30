@@ -2416,67 +2416,90 @@
   }
 
   // ── ADDRESS LOOKUP (postcodes.io) ────────────────────
-  const GETADDRESS_KEY = 'RBzop_3TQkm7iIlsG9nqLQ51768';
-
+  // ── ADDRESS LOOKUP ────────────────────────────────────
+  // Uses postcodes.io (free, no key) + Google Geocoding for full address list
   async function lookupPostcode() {
     const raw = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
-    // Format UK postcode: insert space before last 3 chars (e.g. EX203RA -> EX20 3RA)
+    if (!raw) return;
+    // Format: insert space before last 3 chars
     const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
-    if (!pc) return;
+
     const status = document.getElementById('addr-search-status');
-    status.textContent = 'Searching...';
+    status.textContent = 'Searching for addresses...';
     status.style.color = 'var(--green-mid)';
     document.getElementById('addr-dropdown-wrap').style.display = 'none';
     document.getElementById('addr-confirmed').style.display = 'none';
     document.getElementById('addr-manual-wrap').style.display = 'none';
+
     try {
-      const r = await fetch(
-        `https://api.getaddress.io/find/${encodeURIComponent(pc)}?api-key=${GETADDRESS_KEY}&expand=true`
-      );
-      if (!r.ok) {
-        status.textContent = r.status === 404
-          ? 'Postcode not found. Please check and try again.'
-          : 'Could not find addresses. Try entering manually.';
+      // Step 1: Validate postcode and get coords via postcodes.io (free, no key)
+      const res = await fetch('https://api.postcodes.io/postcodes/' + encodeURIComponent(raw));
+      const data = await res.json();
+
+      if (data.status !== 200 || !data.result) {
+        status.textContent = 'Postcode not found. Please check and try again.';
         status.style.color = 'var(--warn)';
         document.getElementById('addr-manual-wrap').style.display = 'block';
         return;
       }
-      const d = await r.json();
-      const lat = d.latitude; const lng = d.longitude;
-      const addresses = d.addresses || [];
+
+      const lat = data.result.latitude;
+      const lng = data.result.longitude;
       bookData.lat = lat; bookData.lng = lng; bookData.postcode = pc;
-      if (!addresses.length) {
-        status.textContent = 'No addresses found. Please enter manually.';
-        status.style.color = 'var(--warn)';
-        document.getElementById('addr-manual-wrap').style.display = 'block';
-        return;
-      }
-      const sel = document.getElementById('addr-select');
-      sel.innerHTML = '<option value="">— Choose your address —</option>';
-      addresses.forEach((a, i) => {
-        const parts = [a.line_1, a.line_2, a.line_3, a.locality, a.town_or_city]
-          .filter(p => p && p.trim());
-        const label = parts.join(', ') + ', ' + pc;
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = label;
-        opt.dataset.lat = lat; opt.dataset.lng = lng; opt.dataset.addr = label;
-        sel.appendChild(opt);
+
+      // Step 2: Get address list via Google Geocoding
+      loadGoogleMaps(() => {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: pc + ', UK' }, (results, gStatus) => {
+          if (gStatus !== 'OK' || !results || !results.length) {
+            // Fall back to just showing postcode with manual entry
+            status.textContent = 'Found postcode — please enter your full address below';
+            status.style.color = 'var(--green-mid)';
+            document.getElementById('addr-manual-wrap').style.display = 'block';
+            return;
+          }
+
+          const sel = document.getElementById('addr-select');
+          sel.innerHTML = '<option value="">— Choose your address —</option>';
+
+          results.forEach((r, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = r.formatted_address;
+            opt.dataset.lat = r.geometry.location.lat();
+            opt.dataset.lng = r.geometry.location.lng();
+            opt.dataset.addr = r.formatted_address;
+            sel.appendChild(opt);
+          });
+
+          // Always add manual option
+          const manOpt = document.createElement('option');
+          manOpt.value = 'manual';
+          manOpt.textContent = '— Enter address manually —';
+          sel.appendChild(manOpt);
+
+          document.getElementById('addr-dropdown-wrap').style.display = 'block';
+          status.textContent = 'Select your address below';
+          status.style.color = 'var(--green-mid)';
+        });
       });
-      document.getElementById('addr-dropdown-wrap').style.display = 'block';
-      status.textContent = addresses.length + ' address' + (addresses.length !== 1 ? 'es' : '') + ' found';
-      status.style.color = 'var(--green-mid)';
     } catch(e) {
       console.error(e);
-      status.textContent = 'Error looking up postcode. Please enter manually.';
+      status.textContent = 'Error looking up postcode. Please enter your address manually.';
       status.style.color = 'var(--warn)';
       document.getElementById('addr-manual-wrap').style.display = 'block';
     }
   }
 
+
   function selectFromDropdown(sel) {
     const opt = sel.options[sel.selectedIndex];
     if (!opt || !opt.value) return;
+    if (opt.value === 'manual') {
+      document.getElementById('addr-manual-wrap').style.display = 'block';
+      document.getElementById('addr-dropdown-wrap').style.display = 'none';
+      return;
+    }
     bookData.lat = parseFloat(opt.dataset.lat);
     bookData.lng = parseFloat(opt.dataset.lng);
     bookData.address = opt.dataset.addr;
