@@ -1966,11 +1966,8 @@
 
   function getStopAt(e, canvas) {
     const rect = canvas.getBoundingClientRect();
-  // mx declared above
     const my = (e.clientY - rect.top - mapOffY) / mapScale;
-  // W declared above
     for (const s of STOPS) {
-  // px declared above
       const dist = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
       if (dist < 22 / mapScale) return s;
     }
@@ -1981,7 +1978,6 @@
     const s = getStopAt(e, canvas);
     const tt = document.getElementById('map-tooltip');
     if (s) {
-  // rect declared above
       tt.style.left = (e.clientX - rect.left - 80) + 'px';
       tt.style.top = (e.clientY - rect.top - 100) + 'px';
       document.getElementById('tt-name').textContent = s.name;
@@ -1996,7 +1992,6 @@
   }
 
   function handleMapClick(e, canvas) {
-  // s declared above
     if (s) {
       activeStop = s.id;
       document.querySelectorAll('.route-stop').forEach(el => el.classList.remove('active-stop'));
@@ -2007,12 +2002,10 @@
 
   function mapZoom(factor) {
     mapScale = Math.min(3, Math.max(0.5, mapScale * factor));
-  // canvas declared above
     if (canvas) drawMap(canvas);
   }
   function mapReset() {
     mapScale = 1; mapOffX = 0; mapOffY = 0;
-  // canvas declared above
     if (canvas) drawMap(canvas);
   }
 
@@ -2074,15 +2067,12 @@
     const canvas = document.getElementById('crew-map-canvas');
     if (!canvas || crewMapInited) return;
     crewMapInited = true;
-  // wrap declared above
     canvas.width = wrap.offsetWidth;
     canvas.height = wrap.offsetHeight;
     drawCrewMap(canvas);
   }
 
   function drawCrewMap(canvas) {
-  // ctx declared above
-  // W declared above
 
     // Dark map background
     ctx.fillStyle = '#1a2e1e'; ctx.fillRect(0, 0, W, H);
@@ -2109,11 +2099,9 @@
 
     // Stops
     STOPS.forEach((s, i) => {
-  // px declared above
       const py = s.y * H;
       const clamp_px = Math.max(16, Math.min(W - 16, px));
       const clamp_py = Math.max(16, Math.min(H - 16, py));
-  // col declared above
       ctx.beginPath(); ctx.arc(clamp_px, clamp_py, 10, 0, Math.PI * 2);
       ctx.fillStyle = col; ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -2123,21 +2111,17 @@
     // Current location pulse
     const cur = STOPS.find(s => s.status === 'current');
     if (cur) {
-  // px declared above
-  // py declared above
       ctx.beginPath(); ctx.arc(px, py, 18, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(45,186,96,0.2)'; ctx.fill();
     }
   }
 
   function buildCrewJobs() {
-  // list declared above
     if (!list || list.dataset.built) return;
     list.dataset.built = '1';
     STOPS.forEach((s, i) => {
       const isDone = completedJobs.has(s.id);
       const isCurrent = s.status === 'current';
-  // div declared above
       div.className = 'crew-job-card' + (isCurrent ? ' current-job' : '');
       div.id = 'cj-' + s.id;
       const numClass = isDone ? 'done' : isCurrent ? 'now' : s.status === 'next' ? 'next' : 'later';
@@ -2177,7 +2161,6 @@
   function markDone(id) {
     completedJobs.add(id);
     // Rebuild crew jobs
-  // list declared above
     list.innerHTML = ''; delete list.dataset.built;
     // Advance next stop
     const idx = STOPS.findIndex(s => s.id === id);
@@ -2189,7 +2172,6 @@
     const doneEl = document.getElementById('crew-done-count');
     if (doneEl) doneEl.textContent = completedJobs.size;
     // Redraw map
-  // canvas declared above
     if (canvas) drawCrewMap(canvas);
   }
 
@@ -2360,7 +2342,7 @@
   async function lookupPostcode() {
     const raw = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
     if (!raw) return;
-  // pc declared above
+    const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
     const status = document.getElementById('addr-search-status');
     status.textContent = 'Finding addresses...';
     status.style.color = 'var(--green-mid)';
@@ -2369,7 +2351,7 @@
     document.getElementById('addr-manual-wrap').style.display = 'none';
     try {
   // r declared above
-  // d declared above
+      const d = await r.json();
       if (d.code !== 2000 || !d.result || !d.result.length) {
         status.textContent = 'Postcode not found. Please enter address manually.';
         status.style.color = 'var(--warn)';
@@ -2409,7 +2391,7 @@
   }
 
   function selectFromDropdown(sel) {
-  // opt declared above
+    const opt = sel.options[sel.selectedIndex];
     if (!opt || !opt.value) return;
     if (opt.value === 'manual') {
       document.getElementById('addr-manual-wrap').style.display = 'block';
@@ -2440,7 +2422,7 @@
     const street = document.getElementById('addr-manual-street').value.trim();
     const town = document.getElementById('addr-manual-town').value.trim();
     if (!street) return;
-  // addr declared above
+    const addr = document.getElementById('addr-manual-street').value.trim() + ', ' + (document.getElementById('addr-manual-town').value.trim() || '');
     bookData.address = addr;
     document.getElementById('addr-confirmed-text').textContent = addr;
     document.getElementById('addr-confirmed').style.display = 'block';
@@ -2488,7 +2470,6 @@
     let total = base;
     if (bookData.extras.overgrown) total = Math.round(total * 1.5);
     if (bookData.extras.clippings) total += 10;
-  // el declared above
     if (el) el.textContent = '£' + total;
     bookData.totalPrice = total;
   }
@@ -2496,7 +2477,6 @@
   // ── STEP NAV ───────────────────────────────────────────
   function goToStepTwo() {
     if (!bookData.lat || !bookData.lng) {
-  // s declared above
       if (s) { s.textContent = 'Please find and select your address first.'; s.style.color = 'var(--warn)'; }
       return;
     }
@@ -2505,7 +2485,6 @@
     if (banner) banner.textContent = bookData.address;
     const hint = document.getElementById('step2-map-hint');
     if (hint) hint.style.display = 'none';
-  // wrap declared above
     if (wrap) wrap.style.display = 'block';
     // Delay to ensure DOM is fully rendered and visible before map init
     lawnMap = null;
@@ -2532,12 +2511,11 @@
       else if (i + 1 === visualStep) p.classList.add('active');
     });
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
-  // el declared above
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
-  // el declared above
+    const el = document.getElementById('step-' + n);
     if (el) el.classList.add('active');
     if (n === 3) {
       buildDateGrid();
@@ -2710,24 +2688,26 @@
   // ── HERO PANEL FUNCTIONS ─────────────────────────────
   function heroLookup() {
     const q = document.getElementById('hero-addr-input').value.trim();
-  // status declared above
-    if (!q) return;
+    const status = document.getElementById('hero-addr-status');
+    if (!q || !status) return;
     status.textContent = 'Searching...';
     status.style.color = 'var(--green-mid)';
     loadGoogleMaps(() => {
       const geocoder = new google.maps.Geocoder();
       geocoder.geocode({ address: q + ', UK' }, (results, gStatus) => {
         if (gStatus !== 'OK' || !results || !results[0]) {
-          status.textContent = ' Not found — try a postcode';
+          status.textContent = 'Not found — try a postcode';
           status.style.color = 'var(--warn)'; return;
         }
-  // r declared above
-  // lat declared above
-  // pc declared above
+        const r = results[0];
+        const lat = r.geometry.location.lat();
+        const lng = r.geometry.location.lng();
+        let pc = '';
         r.address_components?.forEach(c => { if (c.types.includes('postal_code')) pc = c.long_name; });
         bookData.lat = lat; bookData.lng = lng;
         bookData.address = r.formatted_address; bookData.postcode = pc;
-        document.getElementById('addr-search-input').value = r.formatted_address;
+        const searchInput = document.getElementById('addr-search-input');
+        if (searchInput) searchInput.value = r.formatted_address;
         document.getElementById('addr-street').value = r.formatted_address;
         document.getElementById('addr-postcode').value = pc;
         document.getElementById('addr-lat').value = lat;
@@ -2759,12 +2739,11 @@
     });
     // Update step labels
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
-  // el declared above
       if (el) el.style.color = (i + 1 === n) ? 'var(--green-mid)' : 'var(--ink-light)';
       if (el) el.style.fontWeight = (i + 1 === n) ? '600' : '400';
     });
     const stepId = n <= 3 ? 'step-' + n : 'step-success';
-  // el declared above
+    const el = document.getElementById('step-' + n);
     if (el) el.classList.add('active');
 
     if (n === 2) {
@@ -2813,7 +2792,6 @@
       return;
     }
     if (hint) hint.style.display = 'none';
-  // wrap declared above
     if (wrap) wrap.style.display = 'block';
     // Use longer delay to ensure step-2 is visible and map div has dimensions
     setTimeout(() => {
@@ -2834,14 +2812,13 @@
     // Step labels
 
     labels.forEach((id, i) => {
-  // el declared above
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
     // Show the right step
 
-  // el declared above
+    const el = document.getElementById('step-' + n);
     if (el) el.classList.add('active');
 
     if (n === 3) {
@@ -3059,13 +3036,13 @@
 
 
   function heroSelectAddress(sel) {
-  // opt declared above
+    const opt = sel.options[sel.selectedIndex];
     if (!opt || !opt.value) return;
     bookData.lat = parseFloat(opt.dataset.lat);
     bookData.lng = parseFloat(opt.dataset.lng);
     bookData.address = opt.dataset.addr;
     bookData.postcode = document.getElementById('hero-addr-input').value.trim().toUpperCase().replace(/\s+/g,'');
-  // raw declared above
+    const raw = document.getElementById('hero-addr-input')?.value?.trim()?.toUpperCase()?.replace(/\s+/g,'') || '';
     bookData.postcode = raw.length > 3 ? raw.slice(0,-3) + ' ' + raw.slice(-3) : raw;
     showPage('book');
     setTab(document.querySelectorAll('.nav-tab')[1]);
