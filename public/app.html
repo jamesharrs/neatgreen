@@ -2541,7 +2541,7 @@
     if (window._gmapsLoading) { window._gmapsQueue = window._gmapsQueue || []; window._gmapsQueue.push(callback); return; }
     window._gmapsLoading = true;
     window._gmapsQueue = [callback];
-
+    const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
     script.async = true;
     window.onGmapsReady = () => {
