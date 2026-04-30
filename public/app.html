@@ -10,10 +10,6 @@
 <script>
   window.GMAPS_KEY = 'AIzaSyDOwNwbLlaKC97IH6yyceAOFnODf70fK14';
   window.IDEAL_KEY = 'ak_mol8xv30rYU3unRz1E8Kd2MLyhknZ';
-  // Stub functions — real implementations loaded in main script below
-  
-  
-  function heroSelectAddress(sel) { window._heroSelectAddress && window._heroSelectAddress(sel); }
 </script>
 <style>
   :root {
@@ -2511,9 +2507,9 @@
   // GOOGLE MAPS — shared state
   // ══════════════════════════════════════
   // gmapsLoaded declared above
-  let lawnMap = null, lawnDrawingManager = null, lawnPolygon = null;
-  let fullRouteMap = null, adminMiniMap = null;
-  let routeMarkers = [], routePolyline = null;
+  // lawnMap declared above
+  // fullRouteMap declared above
+  // routeMarkers declared above
 
   const STOP_DATA = [
     { name:'Sarah Johnson',  addr:'14 Oak Avenue, London SW4',  lat:51.4589, lng:-0.1294, price:'£45', time:'8:00 AM',  status:'done'    },
@@ -3010,6 +3006,33 @@
   }
   window._heroSelectAddress = heroSelectAddress;
 
+
+  // Export functions to global scope
+  window.heroLookup = typeof heroLookup !== "undefined" ? heroLookup : window.heroLookup;
+  window.heroStartBooking = typeof heroStartBooking !== "undefined" ? heroStartBooking : window.heroStartBooking;
+  window.heroSelectAddress = typeof heroSelectAddress !== "undefined" ? heroSelectAddress : window.heroSelectAddress;
+  window.showPage = typeof showPage !== "undefined" ? showPage : window.showPage;
+  window.setTab = typeof setTab !== "undefined" ? setTab : window.setTab;
+  window.lookupPostcode = typeof lookupPostcode !== "undefined" ? lookupPostcode : window.lookupPostcode;
+  window.selectFromDropdown = typeof selectFromDropdown !== "undefined" ? selectFromDropdown : window.selectFromDropdown;
+  window.showManualEntry = typeof showManualEntry !== "undefined" ? showManualEntry : window.showManualEntry;
+  window.confirmManualAddress = typeof confirmManualAddress !== "undefined" ? confirmManualAddress : window.confirmManualAddress;
+  window.resetAddress = typeof resetAddress !== "undefined" ? resetAddress : window.resetAddress;
+  window.goToStepTwo = typeof goToStepTwo !== "undefined" ? goToStepTwo : window.goToStepTwo;
+  window.bookNextStep = typeof bookNextStep !== "undefined" ? bookNextStep : window.bookNextStep;
+  window.confirmBooking = typeof confirmBooking !== "undefined" ? confirmBooking : window.confirmBooking;
+  window.selectTime = typeof selectTime !== "undefined" ? selectTime : window.selectTime;
+  window.selectBookFreq = typeof selectBookFreq !== "undefined" ? selectBookFreq : window.selectBookFreq;
+  window.buildDateGrid = typeof buildDateGrid !== "undefined" ? buildDateGrid : window.buildDateGrid;
+  window.toggleExtra = typeof toggleExtra !== "undefined" ? toggleExtra : window.toggleExtra;
+  window.updateLivePrice = typeof updateLivePrice !== "undefined" ? updateLivePrice : window.updateLivePrice;
+  window.resetLawnPolygon = typeof resetLawnPolygon !== "undefined" ? resetLawnPolygon : window.resetLawnPolygon;
+  window.initCrewMap = typeof initCrewMap !== "undefined" ? initCrewMap : window.initCrewMap;
+  window.markDone = typeof markDone !== "undefined" ? markDone : window.markDone;
+  window.runOptimise = typeof runOptimise !== "undefined" ? runOptimise : window.runOptimise;
+  window.initAdminMiniMap = typeof initAdminMiniMap !== "undefined" ? initAdminMiniMap : window.initAdminMiniMap;
+  window.initFullRouteMap = typeof initFullRouteMap !== "undefined" ? initFullRouteMap : window.initFullRouteMap;
+  window.buildRouteSidebar = typeof buildRouteSidebar !== "undefined" ? buildRouteSidebar : window.buildRouteSidebar;
 </script>
 </body>
 </html>
