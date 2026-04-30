@@ -9,75 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>
   window.GMAPS_KEY = 'AIzaSyDOwNwbLlaKC97IH6yyceAOFnODf70fK14';
-  // Bridge: defer calls until main script has loaded
-  function heroLookup() { return _heroLookupImpl(); }
-  window._heroLookup = function() { return _heroLookupImpl(); };
-  function _heroLookupImpl() {
-    const q = document.getElementById('hero-addr-input').value.trim();
-    const status = document.getElementById('hero-addr-status');
-    if (!q) return;
-    const raw = q.toUpperCase().replace(/\s+/g, '');
-    const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
-    status.textContent = 'Finding addresses...';
-    status.style.color = 'var(--green-mid)';
-    document.getElementById('hero-addr-dropdown').style.display = 'none';
-
-    fetch(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${IDEAL_KEY}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.code !== 2000 || !d.result || !d.result.length) {
-          status.textContent = 'Postcode not found — try again or book below';
-          status.style.color = 'var(--warn)';
-          return;
-        }
-        const addresses = d.result;
-        bookData.lat = addresses[0].latitude;
-        bookData.lng = addresses[0].longitude;
-        bookData.postcode = pc;
-        const sel = document.getElementById('hero-addr-select');
-        sel.innerHTML = '<option value="">— Select your address —</option>';
-        addresses.forEach((a, i) => {
-          const parts = [a.line_1, a.line_2, a.line_3, a.post_town].filter(p => p && p.trim());
-          const label = parts.join(', ') + ', ' + pc;
-          const opt = document.createElement('option');
-          opt.value = i;
-          opt.textContent = label;
-          opt.dataset.lat = a.latitude || addresses[0].latitude;
-          opt.dataset.lng = a.longitude || addresses[0].longitude;
-          opt.dataset.addr = label;
-          sel.appendChild(opt);
-        });
-        document.getElementById('hero-addr-dropdown').style.display = 'block';
-        status.textContent = addresses.length + ' address' + (addresses.length !== 1 ? 'es' : '') + ' found — select yours';
-        status.style.color = 'var(--green-mid)';
-      })
-      .catch(() => {
-        status.textContent = 'Error — click "Book a Cut" to try again';
-        status.style.color = 'var(--warn)';
-      });
-  }
-
-  function heroSelectAddress(sel) {
-    const opt = sel.options[sel.selectedIndex];
-    if (!opt || !opt.value) return;
-    bookData.lat = parseFloat(opt.dataset.lat);
-    bookData.lng = parseFloat(opt.dataset.lng);
-    bookData.address = opt.dataset.addr;
-    bookData.postcode = document.getElementById('hero-addr-input').value.trim().toUpperCase();
-    // Pre-fill booking page fields and jump to book page at step 2
-    showPage('book');
-    setTab(document.querySelectorAll('.nav-tab')[1]);
-    setTimeout(() => {
-      document.getElementById('addr-street').value = bookData.address;
-      document.getElementById('addr-postcode').value = bookData.postcode;
-      document.getElementById('addr-lat').value = bookData.lat;
-      document.getElementById('addr-lng').value = bookData.lng;
-      const banner = document.getElementById('step2-addr-display');
-      if (banner) banner.textContent = bookData.address;
-      goToStepTwo();
-    }, 150);
-  }
-
+  window.IDEAL_KEY = 'ak_mol8xv30rYU3unRz1E8Kd2MLyhknZ';
+  // Stub functions — real implementations loaded in main script below
+  
+  
+  function heroSelectAddress(sel) { window._heroSelectAddress && window._heroSelectAddress(sel); }
 </script>
 <style>
   :root {
@@ -2356,7 +2292,7 @@
     document.getElementById('addr-confirmed').style.display = 'none';
     document.getElementById('addr-manual-wrap').style.display = 'none';
     try {
-      const r = await fetch(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${IDEAL_KEY}`);
+      const r = await fetch(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${window.IDEAL_KEY}`);
       const d = await r.json();
       if (d.code !== 2000 || !d.result || !d.result.length) {
         status.textContent = 'Postcode not found. Please enter address manually.';
@@ -2448,37 +2384,9 @@
   function initAddressAutocomplete() {} // no-op
 
   // ── HERO ADDRESS LOOKUP ────────────────────────────────
-  function heroLookup() {
-    const q = document.getElementById('hero-addr-input').value.trim();
-    const status = document.getElementById('hero-addr-status');
-    if (!q) return;
-    status.textContent = 'Searching...';
-    status.style.color = 'var(--green-mid)';
-    loadGoogleMaps(() => {
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ address: q + ', UK' }, (results, gs) => {
-        if (gs !== 'OK' || !results[0]) {
-          status.textContent = 'Not found — try a postcode';
-          status.style.color = 'var(--warn)'; return;
-        }
-        const r = results[0];
-        bookData.lat = r.geometry.location.lat();
-        bookData.lng = r.geometry.location.lng();
-        bookData.address = r.formatted_address;
-        let pc = '';
-        r.address_components?.forEach(c => { if (c.types.includes('postal_code')) pc = c.long_name; });
-        bookData.postcode = pc;
-        status.textContent = 'Found: ' + r.formatted_address;
-        status.style.color = 'var(--green-mid)';
-      });
-    });
-  }
+  
 
-  function heroStartBooking() {
-    showPage('book');
-    setTab(document.querySelectorAll('.nav-tab')[1]);
-    if (bookData.postcode) document.getElementById('postcode-input').value = bookData.postcode;
-  }
+  
 
   // ── EXTRAS TOGGLES ─────────────────────────────────────
   function toggleExtra(key) {
@@ -2602,7 +2510,7 @@
   // ══════════════════════════════════════
   // GOOGLE MAPS — shared state
   // ══════════════════════════════════════
-  let gmapsLoaded = false;
+  // gmapsLoaded declared above
   let lawnMap = null, lawnDrawingManager = null, lawnPolygon = null;
   let fullRouteMap = null, adminMiniMap = null;
   let routeMarkers = [], routePolyline = null;
@@ -2761,6 +2669,7 @@
       });
     });
   }
+  window._heroLookup = heroLookup;
 
   function heroStartBooking() {
     showPage('book');
@@ -2770,6 +2679,7 @@
       document.getElementById('addr-search-input').value = heroInput.value;
     }
   }
+  window._heroStartBooking = heroStartBooking;
 
   // ── BOOKING STEP NAVIGATION ───────────────────────────
   function bookNextStep(n) {
@@ -3077,6 +2987,28 @@
       initAdminMiniMap();
     }
   }, 500);
+
+
+  function heroSelectAddress(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    bookData.lat = parseFloat(opt.dataset.lat);
+    bookData.lng = parseFloat(opt.dataset.lng);
+    bookData.address = opt.dataset.addr;
+    bookData.postcode = document.getElementById('hero-addr-input').value.trim().toUpperCase().replace(/\s+/g,'');
+    const raw = bookData.postcode;
+    bookData.postcode = raw.length > 3 ? raw.slice(0,-3) + ' ' + raw.slice(-3) : raw;
+    showPage('book');
+    setTab(document.querySelectorAll('.nav-tab')[1]);
+    setTimeout(() => {
+      document.getElementById('addr-street').value = bookData.address;
+      document.getElementById('addr-postcode').value = bookData.postcode;
+      document.getElementById('addr-lat').value = bookData.lat;
+      document.getElementById('addr-lng').value = bookData.lng;
+      goToStepTwo();
+    }, 150);
+  }
+  window._heroSelectAddress = heroSelectAddress;
 
 </script>
 </body>
