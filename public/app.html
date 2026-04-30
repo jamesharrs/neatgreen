@@ -885,6 +885,23 @@
   .crew-photo-prompt:hover { background: rgba(232,255,90,0.1); }
 
   .booking-page { overflow: visible !important; }
+  .map-fullscreen #lawn-map {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    z-index: 999 !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+  .map-fullscreen #map-fullscreen-btn {
+    position: fixed !important;
+    top: 16px !important; right: 16px !important;
+    z-index: 1000 !important;
+    font-size: 20px !important;
+  }
+  @media (max-width: 600px) {
+    #map-fullscreen-btn { display: block !important; }
+  }
   .booking-step { overflow: visible !important; }
   #step-2 { overflow: visible !important; }
   gmp-placeautocomplete {
@@ -934,6 +951,8 @@
     .pricing-price { font-size: 26px; }
     .booking-page { padding: 28px 16px 80px; }
     .booking-page h2 { font-size: 24px; }
+    /* Prevent iOS zoom on input focus */
+    input, select, textarea { font-size: 16px !important; }
     .step-title { font-size: 18px; }
     .date-grid { gap: 4px; }
     .date-cell .dc-num { font-size: 13px; }
@@ -1270,8 +1289,15 @@
             </div>
           </div>
         </div>
-        <div id="lawn-map" style="width:100%;height:420px;border-radius:12px;
-          border:2px solid var(--border);overflow:hidden;background:#eaf2eb;"></div>
+        <div style="position:relative">
+          <div id="lawn-map" style="width:100%;height:420px;border-radius:12px;
+            border:2px solid var(--border);overflow:hidden;background:#eaf2eb;"></div>
+          <button onclick="toggleFullscreenMap()" id="map-fullscreen-btn"
+            style="position:absolute;top:10px;right:10px;z-index:10;
+            background:white;border:none;border-radius:8px;padding:8px 10px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;font-size:16px;
+            display:none;line-height:1" title="Full screen">⛶</button>
+        </div>
         <div id="lawn-result" style="display:none;margin-top:14px;padding:18px 20px;
           background:var(--green-pale);border-radius:12px;border:2px solid var(--green-bright);
           box-shadow:0 2px 12px rgba(45,186,96,0.15)">
@@ -2856,6 +2882,19 @@
     window.scrollTo(0, 0);
   }
 
+  // ── FULLSCREEN MAP ───────────────────────────────────────
+  function toggleFullscreenMap() {
+    const wrap = document.getElementById('lawn-sizer-wrap');
+    const btn = document.getElementById('map-fullscreen-btn');
+    const isFullscreen = wrap.classList.toggle('map-fullscreen');
+    btn.textContent = isFullscreen ? '✕' : '⛶';
+    btn.title = isFullscreen ? 'Exit full screen' : 'Full screen';
+    // Trigger map resize after CSS transition
+    setTimeout(() => {
+      if (lawnMap) google.maps.event.trigger(lawnMap, 'resize');
+    }, 100);
+  }
+
   function confirmBooking() {
     // Validate required fields
     const name = document.getElementById('contact-name')?.value.trim();
@@ -3060,13 +3099,27 @@
     if (lawnPreviewPoly) { lawnPreviewPoly.setMap(null); lawnPreviewPoly = null; }
     let handles = lawnHandles;  // alias
 
-    function makeDot(filled) {
+    let selectedHandle = null;
+
+    function makeDot(selected) {
       const d = document.createElement('div');
-      d.style.cssText = 'width:12px;height:12px;border-radius:50%;cursor:grab;' +
-        'background:' + (filled ? '#2dba60' : 'white') + ';' +
-        'border:2.5px solid #2dba60;box-shadow:0 1px 4px rgba(0,0,0,0.4);' +
-        'touch-action:none;pointer-events:auto;';
+      d.style.cssText = 'width:20px;height:20px;border-radius:50%;cursor:grab;' +
+        'background:' + (selected ? 'white' : '#2dba60') + ';' +
+        'border:3px solid ' + (selected ? '#e8ff5a' : '#2dba60') + ';' +
+        'box-shadow:0 2px 8px rgba(0,0,0,0.4);' +
+        'touch-action:none;pointer-events:auto;' +
+        'transform:' + (selected ? 'scale(1.4)' : 'scale(1)') + ';' +
+        'transition:all 0.15s;';
       return d;
+    }
+
+    function selectHandle(marker, index) {
+      // Deselect previous
+      if (selectedHandle !== null && handles[selectedHandle]) {
+        handles[selectedHandle].content = makeDot(false);
+      }
+      selectedHandle = index;
+      marker.content = makeDot(true);
     }
 
     function redraw() {
@@ -3085,9 +3138,10 @@
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: latLng,
         map: lawnMap,
-        content: makeDot(true),
+        content: makeDot(false),
         gmpDraggable: true,
       });
+      // Drag to move (desktop)
       marker.addListener('drag', e => {
         vertices[index] = e.latLng;
         redraw();
@@ -3095,7 +3149,20 @@
       marker.addListener('dragend', e => {
         vertices[index] = e.latLng;
         redraw();
+        selectedHandle = null;
         if (vertices.length >= 3) updateLawnArea(lawnPreviewPoly);
+      });
+      // Tap to select (mobile)
+      marker.addListener('click', e => {
+        if (selectedHandle === index) {
+          // Deselect
+          marker.content = makeDot(false);
+          selectedHandle = null;
+        } else {
+          selectHandle(marker, index);
+          const hint = document.getElementById('lawn-draw-hint');
+          if (hint) hint.textContent = 'Now tap the map where you want to move this point';
+        }
       });
       handles.push(marker);
       return marker;
@@ -3113,9 +3180,24 @@
 
     lawnMap.addListener('click', e => {
       const latLng = e.latLng;
+      // If a handle is selected, move it to tapped location
+      if (selectedHandle !== null) {
+        const idx = selectedHandle;
+        vertices[idx] = latLng;
+        handles[idx].position = latLng;
+        handles[idx].content = makeDot(false);
+        selectedHandle = null;
+        redraw();
+        if (vertices.length >= 3) updateLawnArea(lawnPreviewPoly || lawnPolygon);
+        const hint = document.getElementById('lawn-draw-hint');
+        if (hint) hint.textContent = vertices.length + ' point' + (vertices.length !== 1 ? 's' : '') + ' — tap a dot to move it';
+        return;
+      }
+      if (lawnPolygon) return; // drawing finished
       vertices.push(latLng);
       addHandle(latLng, vertices.length - 1);
       redraw();
+      const hint = document.getElementById('lawn-draw-hint');
       if (hint) hint.textContent = vertices.length + ' point' + (vertices.length !== 1 ? 's' : '') + ' placed — double-click to close shape';
     });
 
