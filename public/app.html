@@ -357,20 +357,35 @@
   .option-card .oc-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--green-deep); }
   .option-card .oc-desc { font-size: 13px; color: var(--ink-light); margin-top: 4px; }
   .option-card .oc-price { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; color: var(--green-mid); margin-top: 10px; }
-  .date-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 28px; }
+  /* Calendar picker */
+  .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-nav-btn { background:none; border:1.5px solid var(--border); border-radius:8px;
+    padding:6px 12px; cursor:pointer; font-size:16px; color:var(--green-deep);
+    transition:all 0.2s; }
+  .cal-nav-btn:hover { border-color:var(--green-bright); background:var(--green-pale); }
+  .cal-month-label { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700;
+    font-size:17px; color:var(--green-deep); }
+  .date-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:16px; }
+  .cal-day-header { text-align:center; font-size:11px; font-weight:600;
+    color:var(--ink-light); text-transform:uppercase; letter-spacing:0.5px;
+    padding:4px 0; }
+  .cal-day-header.sun { color: var(--warn); }
   .date-cell {
-    aspect-ratio: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    border: 1.5px solid var(--border); border-radius: 12px;
-    cursor: pointer; transition: all 0.2s; background: white;
-    font-size: 12px;
+    aspect-ratio:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1px;
+    border:1.5px solid transparent; border-radius:10px;
+    cursor:pointer; transition:all 0.2s; background:white;
+    font-size:12px; position:relative;
   }
-  .date-cell .dc-day { color: var(--ink-light); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .date-cell .dc-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; color: var(--green-deep); }
-  .date-cell:hover, .date-cell.selected {
-    border-color: var(--green-bright); background: var(--green-pale);
-  }
-  .date-cell.disabled { opacity: 0.35; cursor: not-allowed; }
+  .date-cell .dc-num { font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:16px; font-weight:700; color:var(--green-deep); }
+  .date-cell .dc-premium { font-size:9px; color:var(--warn); font-weight:600; margin-top:-2px; }
+  .date-cell:hover:not(.disabled):not(.empty) { border-color:var(--green-bright); background:var(--green-pale); }
+  .date-cell.selected { border-color:var(--green-bright); background:var(--green-pale); }
+  .date-cell.today .dc-num { color:var(--green-bright); }
+  .date-cell.disabled { opacity:0.3; cursor:not-allowed; }
+  .date-cell.empty { background:none; cursor:default; border:none; }
+  .date-cell.sunday .dc-num { color:var(--warn); }
   .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
   .time-slot {
     padding: 14px; text-align: center;
@@ -1335,6 +1350,11 @@
 
       <div class="form-group" style="margin-top:24px">
         <label class="form-label">Pick a date</label>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="shiftCalMonth(-1)">&#8592;</button>
+          <span class="cal-month-label" id="cal-month-label">May 2026</span>
+          <button class="cal-nav-btn" onclick="shiftCalMonth(1)">&#8594;</button>
+        </div>
         <div class="date-grid" id="date-grid"></div>
       </div>
 
@@ -1704,26 +1724,93 @@
   }
 
   // Generate date cells
+  let calYear, calMonth;
+
+  function shiftCalMonth(dir) {
+    calMonth += dir;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    buildDateGrid();
+  }
+
   function buildDateGrid() {
     const grid = document.getElementById('date-grid');
     if (!grid) return;
-    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
     const today = new Date();
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
+    today.setHours(0,0,0,0);
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+
+    // Init month to next available
+    if (!calYear) {
+      calYear = tomorrow.getFullYear();
+      calMonth = tomorrow.getMonth();
+    }
+
+    const monthNames = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+    const label = document.getElementById('cal-month-label');
+    if (label) label.textContent = monthNames[calMonth] + ' ' + calYear;
+
+    grid.innerHTML = '';
+
+    // Day headers Mo Tu We Th Fr Sa Su
+    const dayHeaders = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+    dayHeaders.forEach((d, i) => {
+      const h = document.createElement('div');
+      h.className = 'cal-day-header' + (i === 6 ? ' sun' : '');
+      h.textContent = d;
+      grid.appendChild(h);
+    });
+
+    // First day of month (convert Sun=0 to Mon=0 basis)
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const startOffset = (firstDay === 0) ? 6 : firstDay - 1;
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+    // Empty cells before month start
+    for (let i = 0; i < startOffset; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'date-cell empty';
+      grid.appendChild(empty);
+    }
+
+    // Day cells
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(calYear, calMonth, day);
+      const isSunday = d.getDay() === 0;
+      const isPast = d < tomorrow;
       const cell = document.createElement('div');
-      cell.className = 'date-cell' + (i === 0 ? ' disabled' : '');
-      cell.innerHTML = `<span class="dc-day">${days[d.getDay()]}</span><span class="dc-num">${d.getDate()}</span>`;
-      if (i > 0) cell.onclick = function() {
-        document.querySelectorAll('.date-cell').forEach(c => c.classList.remove('selected'));
-        this.classList.add('selected');
-        bookData.date = days[d.getDay()] + ' ' + d.getDate() + ' ' + d.toLocaleString('en-GB',{month:'short'});
-      };
+      const isToday = d.getTime() === today.getTime();
+
+      cell.className = 'date-cell' +
+        (isPast ? ' disabled' : '') +
+        (isToday ? ' today' : '') +
+        (isSunday ? ' sunday' : '');
+
+      cell.innerHTML = `<span class="dc-num">${day}</span>` +
+        (isSunday && !isPast ? `<span class="dc-premium">+20%</span>` : '');
+
+      if (!isPast) {
+        cell.onclick = function() {
+          document.querySelectorAll('.date-cell').forEach(c => c.classList.remove('selected'));
+          this.classList.add('selected');
+          const formatted = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+          bookData.date = formatted;
+          // Apply Sunday premium
+          if (isSunday) {
+            const base = bookData.price || 45;
+            bookData.sundayPrice = Math.round(base * 1.2 / 5) * 5;
+            const pl = document.getElementById('price-live-amount');
+            if (pl) pl.textContent = '£' + bookData.sundayPrice;
+          } else {
+            bookData.sundayPrice = null;
+            updateLivePrice();
+          }
+        };
+      }
       grid.appendChild(cell);
     }
   }
-  buildDateGrid();
 
   function confirmBooking() {
     document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
