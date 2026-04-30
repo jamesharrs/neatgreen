@@ -876,13 +876,10 @@
   .pac-container { z-index: 99999 !important; }
 
   /* RESPONSIVE */
-  /* ── TABLET ── */
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; }
     .hero-left { padding: 48px 24px 32px; }
     .hero-right { padding: 32px 20px 48px; min-height: unset; }
-    .hero h1 { font-size: 42px; }
-    .hero-stats { gap: 20px; margin-top: 32px; padding-top: 24px; }
     .steps-grid { grid-template-columns: 1fr; }
     .pricing-cards { grid-template-columns: 1fr 1fr; }
     .kpi-grid { grid-template-columns: 1fr 1fr; }
@@ -893,79 +890,47 @@
     .section { padding: 60px 24px; }
     .booking-card { max-width: 100% !important; }
   }
-
-  /* ── MOBILE ── */
   @media (max-width: 600px) {
-    nav { padding: 0 16px; height: 60px; }
+    nav { height: 60px; }
     .nav-logo { font-size: 18px; }
-    .nav-logo .leaf { width: 24px; height: 24px; font-size: 12px; }
-    .nav-tabs { gap: 2px; }
     .nav-tab { padding: 6px 10px; font-size: 12px; }
-    .nav-cta { padding: 8px 14px; font-size: 12px; display: none; }
+    .nav-cta { display: none; }
     .page { padding-top: 60px; }
-
     .hero { grid-template-columns: 1fr; min-height: unset; }
     .hero-left { padding: 32px 20px 24px; order: 2; }
     .hero-right { padding: 28px 16px 40px; order: 1; }
-    .hero h1 { font-size: clamp(30px, 8vw, 42px); letter-spacing: -0.5px; margin-bottom: 14px; }
+    .hero h1 { font-size: clamp(28px, 8vw, 40px); letter-spacing: -0.5px; margin-bottom: 14px; }
     .hero-sub { font-size: 15px; margin-bottom: 24px; }
     .hero-actions { flex-direction: column; gap: 10px; }
-    .btn-primary { width: 100%; justify-content: center; padding: 14px 24px; }
-    .btn-secondary { width: 100%; text-align: center; padding: 14px 24px; }
+    .btn-primary, .btn-secondary { width: 100%; justify-content: center; text-align: center; padding: 14px 20px; }
     .hero-stats { gap: 16px; margin-top: 24px; padding-top: 20px; }
     .stat-num { font-size: 22px; }
-
     .booking-card { padding: 20px 16px; border-radius: 16px; max-width: 100% !important; }
-    .booking-card h3 { font-size: 18px; }
-
     .section { padding: 40px 16px; }
     .section-title { font-size: 26px; margin-bottom: 28px; }
     .step-card { padding: 20px 16px; }
-    .step-num { width: 40px; height: 40px; font-size: 16px; }
-
     .pricing-strip { padding: 40px 16px; }
     .pricing-title { font-size: 26px; }
     .pricing-cards { grid-template-columns: 1fr 1fr; gap: 10px; }
     .pricing-card { padding: 18px 14px; }
     .pricing-price { font-size: 26px; }
-    .pricing-card .btn-book-sm { margin-top: 12px; padding: 10px; font-size: 13px; }
-
     .booking-page { padding: 28px 16px 80px; }
     .booking-page h2 { font-size: 24px; }
-    .step-title { font-size: 18px; margin-bottom: 16px; }
-    .option-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .option-card { padding: 14px; }
-    .date-grid { grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .date-cell { border-radius: 8px; }
+    .step-title { font-size: 18px; }
+    .date-grid { gap: 4px; }
     .date-cell .dc-num { font-size: 13px; }
     .date-cell .dc-day { font-size: 9px; }
-    .time-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .time-slot { padding: 11px; font-size: 13px; }
-    .btn-next { font-size: 14px; padding: 13px 16px; }
-    .btn-back { font-size: 14px; padding: 13px 16px; }
+    .time-grid { grid-template-columns: repeat(2,1fr); }
     .confirm-summary { padding: 16px; }
-    .confirm-row { font-size: 13px; }
-    .progress-bar { margin-bottom: 20px; }
-
     .admin-main { padding: 16px; }
-    .admin-header { flex-direction: column; gap: 10px; }
-    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
     .kpi-value { font-size: 22px; }
     .kpi-card { padding: 14px; }
-    .admin-card { padding: 16px; }
-
-    .maps-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; min-height: calc(100vh - 60px); }
-    .maps-sidebar { max-height: 45vh; overflow-y: auto; }
-    .map-canvas-wrap { height: 55vw; min-height: 220px; }
-
-    .modal { padding: 20px; margin: 12px; width: calc(100% - 24px); border-radius: 16px; }
+    .maps-layout { grid-template-columns: 1fr; }
+    .modal { padding: 20px; width: calc(100% - 24px); margin: 12px; }
     .two-col { grid-template-columns: 1fr; }
   }
-
   @media (max-width: 380px) {
-    .nav-tab { font-size: 11px; padding: 5px 8px; }
     .hero h1 { font-size: 26px; }
-    .option-grid { grid-template-columns: 1fr; }
     .pricing-cards { grid-template-columns: 1fr; }
   }
 </style>
@@ -1966,8 +1931,11 @@
 
   function getStopAt(e, canvas) {
     const rect = canvas.getBoundingClientRect();
+  // mx declared above
     const my = (e.clientY - rect.top - mapOffY) / mapScale;
+  // W declared above
     for (const s of STOPS) {
+  // px declared above
       const dist = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
       if (dist < 22 / mapScale) return s;
     }
@@ -1978,6 +1946,7 @@
     const s = getStopAt(e, canvas);
     const tt = document.getElementById('map-tooltip');
     if (s) {
+  // rect declared above
       tt.style.left = (e.clientX - rect.left - 80) + 'px';
       tt.style.top = (e.clientY - rect.top - 100) + 'px';
       document.getElementById('tt-name').textContent = s.name;
@@ -1992,6 +1961,7 @@
   }
 
   function handleMapClick(e, canvas) {
+  // s declared above
     if (s) {
       activeStop = s.id;
       document.querySelectorAll('.route-stop').forEach(el => el.classList.remove('active-stop'));
@@ -2002,10 +1972,12 @@
 
   function mapZoom(factor) {
     mapScale = Math.min(3, Math.max(0.5, mapScale * factor));
+  // canvas declared above
     if (canvas) drawMap(canvas);
   }
   function mapReset() {
     mapScale = 1; mapOffX = 0; mapOffY = 0;
+  // canvas declared above
     if (canvas) drawMap(canvas);
   }
 
@@ -2067,12 +2039,15 @@
     const canvas = document.getElementById('crew-map-canvas');
     if (!canvas || crewMapInited) return;
     crewMapInited = true;
+  // wrap declared above
     canvas.width = wrap.offsetWidth;
     canvas.height = wrap.offsetHeight;
     drawCrewMap(canvas);
   }
 
   function drawCrewMap(canvas) {
+  // ctx declared above
+  // W declared above
 
     // Dark map background
     ctx.fillStyle = '#1a2e1e'; ctx.fillRect(0, 0, W, H);
@@ -2099,9 +2074,11 @@
 
     // Stops
     STOPS.forEach((s, i) => {
+  // px declared above
       const py = s.y * H;
       const clamp_px = Math.max(16, Math.min(W - 16, px));
       const clamp_py = Math.max(16, Math.min(H - 16, py));
+  // col declared above
       ctx.beginPath(); ctx.arc(clamp_px, clamp_py, 10, 0, Math.PI * 2);
       ctx.fillStyle = col; ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -2111,17 +2088,21 @@
     // Current location pulse
     const cur = STOPS.find(s => s.status === 'current');
     if (cur) {
+  // px declared above
+  // py declared above
       ctx.beginPath(); ctx.arc(px, py, 18, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(45,186,96,0.2)'; ctx.fill();
     }
   }
 
   function buildCrewJobs() {
+  // list declared above
     if (!list || list.dataset.built) return;
     list.dataset.built = '1';
     STOPS.forEach((s, i) => {
       const isDone = completedJobs.has(s.id);
       const isCurrent = s.status === 'current';
+  // div declared above
       div.className = 'crew-job-card' + (isCurrent ? ' current-job' : '');
       div.id = 'cj-' + s.id;
       const numClass = isDone ? 'done' : isCurrent ? 'now' : s.status === 'next' ? 'next' : 'later';
@@ -2161,6 +2142,7 @@
   function markDone(id) {
     completedJobs.add(id);
     // Rebuild crew jobs
+  // list declared above
     list.innerHTML = ''; delete list.dataset.built;
     // Advance next stop
     const idx = STOPS.findIndex(s => s.id === id);
@@ -2172,6 +2154,7 @@
     const doneEl = document.getElementById('crew-done-count');
     if (doneEl) doneEl.textContent = completedJobs.size;
     // Redraw map
+  // canvas declared above
     if (canvas) drawCrewMap(canvas);
   }
 
@@ -2342,7 +2325,7 @@
   async function lookupPostcode() {
     const raw = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
     if (!raw) return;
-    const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
+  // pc declared above
     const status = document.getElementById('addr-search-status');
     status.textContent = 'Finding addresses...';
     status.style.color = 'var(--green-mid)';
@@ -2351,7 +2334,7 @@
     document.getElementById('addr-manual-wrap').style.display = 'none';
     try {
   // r declared above
-      const d = await r.json();
+  // d declared above
       if (d.code !== 2000 || !d.result || !d.result.length) {
         status.textContent = 'Postcode not found. Please enter address manually.';
         status.style.color = 'var(--warn)';
@@ -2391,7 +2374,7 @@
   }
 
   function selectFromDropdown(sel) {
-    const opt = sel.options[sel.selectedIndex];
+  // opt declared above
     if (!opt || !opt.value) return;
     if (opt.value === 'manual') {
       document.getElementById('addr-manual-wrap').style.display = 'block';
@@ -2422,7 +2405,7 @@
     const street = document.getElementById('addr-manual-street').value.trim();
     const town = document.getElementById('addr-manual-town').value.trim();
     if (!street) return;
-    const addr = document.getElementById('addr-manual-street').value.trim() + ', ' + (document.getElementById('addr-manual-town').value.trim() || '');
+  // addr declared above
     bookData.address = addr;
     document.getElementById('addr-confirmed-text').textContent = addr;
     document.getElementById('addr-confirmed').style.display = 'block';
@@ -2470,6 +2453,7 @@
     let total = base;
     if (bookData.extras.overgrown) total = Math.round(total * 1.5);
     if (bookData.extras.clippings) total += 10;
+  // el declared above
     if (el) el.textContent = '£' + total;
     bookData.totalPrice = total;
   }
@@ -2477,6 +2461,7 @@
   // ── STEP NAV ───────────────────────────────────────────
   function goToStepTwo() {
     if (!bookData.lat || !bookData.lng) {
+  // s declared above
       if (s) { s.textContent = 'Please find and select your address first.'; s.style.color = 'var(--warn)'; }
       return;
     }
@@ -2485,6 +2470,7 @@
     if (banner) banner.textContent = bookData.address;
     const hint = document.getElementById('step2-map-hint');
     if (hint) hint.style.display = 'none';
+  // wrap declared above
     if (wrap) wrap.style.display = 'block';
     // Delay to ensure DOM is fully rendered and visible before map init
     lawnMap = null;
@@ -2511,11 +2497,12 @@
       else if (i + 1 === visualStep) p.classList.add('active');
     });
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
+  // el declared above
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
-    const el = document.getElementById('step-' + n);
+  // el declared above
     if (el) el.classList.add('active');
     if (n === 3) {
       buildDateGrid();
@@ -2569,6 +2556,22 @@
   // fullRouteMap declared above
   // routeMarkers declared above
 
+  function loadGoogleMaps(callback) {
+    if (gmapsLoaded) { callback(); return; }
+    if (window._gmapsLoading) { window._gmapsQueue = window._gmapsQueue || []; window._gmapsQueue.push(callback); return; }
+    window._gmapsLoading = true;
+    window._gmapsQueue = [callback];
+
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
+    script.async = true;
+    window.onGmapsReady = () => {
+      gmapsLoaded = true;
+      window._gmapsLoading = false;
+      (window._gmapsQueue || []).forEach(fn => fn());
+      window._gmapsQueue = [];
+    };
+    document.head.appendChild(script);
+  }
 
   // ── FULL ROUTE MAP (maps page) ────────────────────────────
   function initFullRouteMap() {
@@ -2677,10 +2680,9 @@
     status.textContent = 'Searching...';
     status.style.color = 'var(--green-mid)';
     document.getElementById('hero-addr-dropdown').style.display = 'none';
-
-    const raw2 = q.toUpperCase().replace(/\s+/g, '');
-    const pc2 = raw2.length > 3 ? raw2.slice(0, -3) + ' ' + raw2.slice(-3) : raw2;
-    fetch(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc2)}?api_key=${window.IDEAL_KEY}`)
+    const raw = q.toUpperCase().replace(/\s+/g, '');
+    const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
+    fetch(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${window.IDEAL_KEY}`)
       .then(r => r.json())
       .then(d => {
         if (d.code !== 2000 || !d.result || !d.result.length) {
@@ -2688,19 +2690,17 @@
           status.style.color = 'var(--warn)'; return;
         }
         const addresses = d.result;
-        bookData.lat = addresses[0].latitude;
-        bookData.lng = addresses[0].longitude;
-        bookData.postcode = pc2;
+        bookData.postcode = pc;
         const sel = document.getElementById('hero-addr-select');
         sel.innerHTML = '<option value="">— Select your address —</option>';
         addresses.forEach((a, i) => {
           const parts = [a.line_1, a.line_2, a.line_3, a.post_town].filter(p => p && p.trim());
-          const label = parts.join(', ') + ', ' + pc2;
+          const label = parts.join(', ') + ', ' + pc;
           const opt = document.createElement('option');
           opt.value = i;
           opt.textContent = label;
-          opt.dataset.lat = a.latitude || addresses[0].latitude;
-          opt.dataset.lng = a.longitude || addresses[0].longitude;
+          opt.dataset.lat = a.latitude;
+          opt.dataset.lng = a.longitude;
           opt.dataset.addr = label;
           sel.appendChild(opt);
         });
@@ -2715,13 +2715,31 @@
   }
   window._heroLookup = heroLookup;
 
+  function heroSelectAddress(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    bookData.lat = parseFloat(opt.dataset.lat);
+    bookData.lng = parseFloat(opt.dataset.lng);
+    bookData.address = opt.dataset.addr;
+    showPage('book');
+    setTab(document.querySelectorAll('.nav-tab')[1]);
+    setTimeout(() => {
+      const si = document.getElementById('addr-street');
+      if (si) si.value = bookData.address;
+      const pi = document.getElementById('addr-postcode');
+      if (pi) pi.value = bookData.postcode;
+      const li = document.getElementById('addr-lat');
+      if (li) li.value = bookData.lat;
+      const gi = document.getElementById('addr-lng');
+      if (gi) gi.value = bookData.lng;
+      goToStepTwo();
+    }, 150);
+  }
+  window._heroSelectAddress = heroSelectAddress;
+
   function heroStartBooking() {
     showPage('book');
     setTab(document.querySelectorAll('.nav-tab')[1]);
-    const heroInput = document.getElementById('hero-addr-input');
-    if (heroInput && heroInput.value) {
-      document.getElementById('addr-search-input').value = heroInput.value;
-    }
   }
   window._heroStartBooking = heroStartBooking;
 
@@ -2735,11 +2753,12 @@
     });
     // Update step labels
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
+  // el declared above
       if (el) el.style.color = (i + 1 === n) ? 'var(--green-mid)' : 'var(--ink-light)';
       if (el) el.style.fontWeight = (i + 1 === n) ? '600' : '400';
     });
     const stepId = n <= 3 ? 'step-' + n : 'step-success';
-    const el = document.getElementById('step-' + n);
+  // el declared above
     if (el) el.classList.add('active');
 
     if (n === 2) {
@@ -2788,6 +2807,7 @@
       return;
     }
     if (hint) hint.style.display = 'none';
+  // wrap declared above
     if (wrap) wrap.style.display = 'block';
     // Use longer delay to ensure step-2 is visible and map div has dimensions
     setTimeout(() => {
@@ -2808,13 +2828,14 @@
     // Step labels
 
     labels.forEach((id, i) => {
+  // el declared above
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
     // Show the right step
 
-    const el = document.getElementById('step-' + n);
+  // el declared above
     if (el) el.classList.add('active');
 
     if (n === 3) {
@@ -3024,21 +3045,20 @@
 
   // Auto-init admin mini map when admin page loads
   setTimeout(() => {
-    const adminPage = document.getElementById('page-admin');
-    if (adminPage && adminPage.classList.contains('active')) {
+    if (document.getElementById('page-admin').classList.contains('active')) {
       initAdminMiniMap();
     }
   }, 500);
 
 
   function heroSelectAddress(sel) {
-    const opt = sel.options[sel.selectedIndex];
+  // opt declared above
     if (!opt || !opt.value) return;
     bookData.lat = parseFloat(opt.dataset.lat);
     bookData.lng = parseFloat(opt.dataset.lng);
     bookData.address = opt.dataset.addr;
     bookData.postcode = document.getElementById('hero-addr-input').value.trim().toUpperCase().replace(/\s+/g,'');
-    const raw = document.getElementById('hero-addr-input')?.value?.trim()?.toUpperCase()?.replace(/\s+/g,'') || '';
+  // raw declared above
     bookData.postcode = raw.length > 3 ? raw.slice(0,-3) + ' ' + raw.slice(-3) : raw;
     showPage('book');
     setTab(document.querySelectorAll('.nav-tab')[1]);
