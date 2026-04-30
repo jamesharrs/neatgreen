@@ -2676,30 +2676,42 @@
     if (!q || !status) return;
     status.textContent = 'Searching...';
     status.style.color = 'var(--green-mid)';
-    loadGoogleMaps(() => {
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ address: q + ', UK' }, (results, gStatus) => {
-        if (gStatus !== 'OK' || !results || !results[0]) {
-          status.textContent = 'Not found — try a postcode';
+    document.getElementById('hero-addr-dropdown').style.display = 'none';
+
+    const raw2 = q.toUpperCase().replace(/\s+/g, '');
+    const pc2 = raw2.length > 3 ? raw2.slice(0, -3) + ' ' + raw2.slice(-3) : raw2;
+    fetch(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc2)}?api_key=${window.IDEAL_KEY}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.code !== 2000 || !d.result || !d.result.length) {
+          status.textContent = 'Postcode not found — please check and try again';
           status.style.color = 'var(--warn)'; return;
         }
-        const r = results[0];
-        const lat = r.geometry.location.lat();
-        const lng = r.geometry.location.lng();
-        let pc = '';
-        r.address_components?.forEach(c => { if (c.types.includes('postal_code')) pc = c.long_name; });
-        bookData.lat = lat; bookData.lng = lng;
-        bookData.address = r.formatted_address; bookData.postcode = pc;
-        const searchInput = document.getElementById('addr-search-input');
-        if (searchInput) searchInput.value = r.formatted_address;
-        document.getElementById('addr-street').value = r.formatted_address;
-        document.getElementById('addr-postcode').value = pc;
-        document.getElementById('addr-lat').value = lat;
-        document.getElementById('addr-lng').value = lng;
-        status.textContent = ' Found! Now head to Book a Cut to map your lawn';
+        const addresses = d.result;
+        bookData.lat = addresses[0].latitude;
+        bookData.lng = addresses[0].longitude;
+        bookData.postcode = pc2;
+        const sel = document.getElementById('hero-addr-select');
+        sel.innerHTML = '<option value="">— Select your address —</option>';
+        addresses.forEach((a, i) => {
+          const parts = [a.line_1, a.line_2, a.line_3, a.post_town].filter(p => p && p.trim());
+          const label = parts.join(', ') + ', ' + pc2;
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = label;
+          opt.dataset.lat = a.latitude || addresses[0].latitude;
+          opt.dataset.lng = a.longitude || addresses[0].longitude;
+          opt.dataset.addr = label;
+          sel.appendChild(opt);
+        });
+        document.getElementById('hero-addr-dropdown').style.display = 'block';
+        status.textContent = addresses.length + ' address' + (addresses.length !== 1 ? 'es' : '') + ' found — select yours';
         status.style.color = 'var(--green-mid)';
+      })
+      .catch(() => {
+        status.textContent = 'Error — please try again';
+        status.style.color = 'var(--warn)';
       });
-    });
   }
   window._heroLookup = heroLookup;
 
