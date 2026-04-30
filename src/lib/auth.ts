@@ -8,7 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(
 )
 const COOKIE_NAME = 'greenrun_token'
 
-export interface JWTPayload {
+export interface JWTPayload extends Record<string, unknown> {
   userId: string
   email: string
   role: string
