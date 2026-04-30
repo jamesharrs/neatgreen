@@ -1402,7 +1402,7 @@
         </div>
         <div class="confirm-row">
           <span class="cr-label">Address</span>
-          <span class="cr-value" id="conf-addr" style="text-align:right;max-width:60%">Your address</span>
+          <span class="cr-value" id="conf-addr" style="text-align:right;max-width:65%;line-height:1.4">Your address</span>
         </div>
         <div class="confirm-row" id="conf-notes-row" style="display:none">
           <span class="cr-label">Access notes</span>
@@ -1415,20 +1415,24 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Your name</label>
-        <input type="text" class="form-input" id="contact-name" placeholder="Full name">
+        <label class="form-label">Your name <span style="color:var(--warn)">*</span></label>
+        <input type="text" class="form-input" id="contact-name" placeholder="Full name" required>
       </div>
       <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-input" id="contact-email" placeholder="you@email.com">
+        <label class="form-label">Email <span style="color:var(--warn)">*</span></label>
+        <input type="email" class="form-input" id="contact-email" placeholder="you@email.com" required>
       </div>
       <div class="form-group">
-        <label class="form-label">Phone</label>
-        <input type="tel" class="form-input" id="contact-phone" placeholder="07xxx xxxxxx">
+        <label class="form-label">Phone <span style="color:var(--warn)">*</span></label>
+        <input type="tel" class="form-input" id="contact-phone" placeholder="07xxx xxxxxx" required>
       </div>
       <div class="form-group">
         <label class="form-label">Gate / access notes (optional)</label>
         <input type="text" class="form-input" id="addr-notes" placeholder="e.g. Side gate, code 1234">
+      </div>
+      <div id="contact-error" style="display:none;color:var(--warn);font-size:14px;
+        padding:10px 14px;background:#fff0eb;border-radius:8px;border:1px solid #ffd0c0;margin-bottom:8px">
+        Please fill in your name, email and phone number to continue.
       </div>
 
       <div style="background:var(--green-pale);border-radius:var(--r-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--ink-light);">
@@ -1711,17 +1715,6 @@
     currentStep = n;
   }
 
-  function confirmBooking() {
-    const sizeMap = { small: 'Small garden cut', medium: 'Medium garden cut', large: 'Large garden cut', xl: 'XL garden cut' };
-    document.getElementById('conf-size').textContent = sizeMap[bookData.size] || 'Medium garden cut';
-    document.getElementById('conf-freq').textContent = bookData.freq;
-    document.getElementById('conf-price').textContent = '£' + bookData.price;
-    document.getElementById('conf-dt').textContent = bookData.date || 'Wed 23 Apr' + ' · ' + (bookData.time || '9:00 AM');
-    const st = document.getElementById('addr-street');
-    const pc = document.getElementById('addr-postcode');
-    document.getElementById('conf-addr').textContent = (st && st.value ? st.value + ', ' : '42 Green Lane, ') + (pc && pc.value ? pc.value : 'M1 1AA');
-    nextStep(4);
-  }
 
   // Generate date cells
   let calYear, calMonth;
@@ -1812,12 +1805,6 @@
     }
   }
 
-  function confirmBooking() {
-    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
-    document.getElementById('step-success').classList.add('active');
-    document.getElementById('booking-ref').textContent = 'GR-' + Math.floor(1000 + Math.random() * 9000);
-  }
 
 
   // ══════════════════════════════════════
@@ -2547,14 +2534,6 @@
   }
 
   // ── CONFIRM BOOKING ────────────────────────────────────
-  function confirmBooking() {
-    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
-    document.getElementById('step-success').classList.add('active');
-    document.getElementById('booking-ref').textContent = 'NG-' + Math.floor(1000 + Math.random() * 9000);
-    window.scrollTo(0, 0);
-    // TODO: POST to /api/bookings with full bookData
-  }
 
   // ── BOOK NEXT STEP ─────────────────────────────────────
   function bookNextStep(n) {
@@ -2854,6 +2833,28 @@
   }
 
   function confirmBooking() {
+    // Validate required fields
+    const name = document.getElementById('contact-name')?.value.trim();
+    const email = document.getElementById('contact-email')?.value.trim();
+    const phone = document.getElementById('contact-phone')?.value.trim();
+    const errEl = document.getElementById('contact-error');
+    if (!name || !email || !phone) {
+      if (errEl) errEl.style.display = 'block';
+      // Highlight missing fields
+      ['contact-name','contact-email','contact-phone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.borderColor = !el.value.trim() ? 'var(--warn)' : 'var(--border)';
+      });
+      return;
+    }
+    if (errEl) errEl.style.display = 'none';
+
+    // Store contact info
+    bookData.name = name;
+    bookData.email = email;
+    bookData.phone = phone;
+
+    // Show success
     document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
     document.getElementById('step-success').classList.add('active');
