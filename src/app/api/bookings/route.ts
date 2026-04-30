@@ -23,6 +23,10 @@ const createBookingSchema = z.object({
   gardenSize: z.enum(['SMALL', 'MEDIUM', 'LARGE', 'XL']),
   gardenAreaM2: z.number().optional(),
   gardenNotes: z.string().optional(),
+  overgrown: z.boolean().optional(),
+  clippings: z.boolean().optional(),
+  isSunday: z.boolean().optional(),
+  totalPriceInPence: z.number().optional(),
 
   // Schedule
   frequency: z.enum(['ONE_OFF', 'FORTNIGHTLY', 'MONTHLY']),
@@ -105,7 +109,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = createBookingSchema.parse(body)
 
-    const priceInPence = GARDEN_PRICES[data.gardenSize]
+    const priceInPence = data.totalPriceInPence ?? GARDEN_PRICES[data.gardenSize]
 
     // Upsert customer (existing customer rebooking uses same email)
     const customer = await db.customer.upsert({
@@ -121,7 +125,12 @@ export async function POST(req: NextRequest) {
         longitude: data.longitude,
         gardenSize: data.gardenSize,
         gardenAreaM2: data.gardenAreaM2,
-        gardenNotes: data.gardenNotes,
+        gardenNotes: [
+          data.gardenNotes,
+          data.overgrown ? 'OVERGROWN' : null,
+          data.clippings ? 'CLIPPINGS' : null,
+          data.isSunday  ? 'SUNDAY'    : null,
+        ].filter(Boolean).join(', ') || undefined,
         frequency: data.frequency,
         pricePerCut: priceInPence,
       },
@@ -137,7 +146,12 @@ export async function POST(req: NextRequest) {
         longitude: data.longitude,
         gardenSize: data.gardenSize,
         gardenAreaM2: data.gardenAreaM2,
-        gardenNotes: data.gardenNotes,
+        gardenNotes: [
+          data.gardenNotes,
+          data.overgrown ? 'OVERGROWN' : null,
+          data.clippings ? 'CLIPPINGS' : null,
+          data.isSunday  ? 'SUNDAY'    : null,
+        ].filter(Boolean).join(', ') || undefined,
         frequency: data.frequency,
         pricePerCut: priceInPence,
       },

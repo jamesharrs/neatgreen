@@ -983,8 +983,8 @@
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home'); setTab(this)">Home</button>
     <button class="nav-tab" onclick="showPage('book'); setTab(this)">Book a Cut</button>
-    <button class="nav-tab" onclick="showPage('admin'); setTab(this)">Admin</button>
-    <button class="nav-tab" onclick="showPage('crew'); setTab(this); initCrewMap()">Crew</button>
+    <button class="nav-tab" onclick="requireLogin('admin', this)">Admin</button>
+    <button class="nav-tab" onclick="requireLogin('crew', this)">Crew</button>
   </div>
   <button class="nav-cta" onclick="showPage('book'); setTab(document.querySelectorAll('.nav-tab')[1])">Get a Quote →</button>
 </nav>
@@ -1517,6 +1517,179 @@
   </div>
 </div>
 
+<!-- ═══════════════════ LOGIN PAGE ═══════════════════ -->
+<div class="page" id="page-login">
+  <div style="min-height:calc(100vh - 68px);display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:white;border-radius:24px;padding:48px 40px;width:100%;max-width:400px;
+      box-shadow:var(--shadow-lg);border:1px solid var(--border)">
+      <div style="text-align:center;margin-bottom:32px">
+        <div style="font-size:48px;margin-bottom:12px">🌿</div>
+        <h2 style="font-size:24px;font-weight:800;color:var(--green-deep);margin-bottom:6px">Staff Login</h2>
+        <p style="font-size:14px;color:var(--ink-light)">Admin &amp; Crew access only</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="login-email" placeholder="you@neatgreen.co.uk"
+          onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="login-password" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <div id="login-error" style="display:none;color:var(--warn);font-size:13px;
+        padding:10px 14px;background:#fff0eb;border-radius:8px;margin-bottom:16px;border:1px solid #ffd0c0">
+        Invalid email or password
+      </div>
+      <button onclick="doLogin()" id="login-btn"
+        style="width:100%;padding:14px;background:var(--green-deep);color:white;
+        border:none;border-radius:99px;font-family:'Plus Jakarta Sans',sans-serif;
+        font-weight:700;font-size:16px;cursor:pointer">
+        Sign in →
+      </button>
+      <p style="text-align:center;margin-top:20px;font-size:13px">
+        <a href="#" onclick="showPage('home');setTab(document.querySelectorAll('.nav-tab')[0]);return false"
+          style="color:var(--green-mid)">← Back to home</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ADMIN DASHBOARD ═══════════════════ -->
+<div class="page" id="page-admin">
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div style="padding:20px 12px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;color:white">Neat Green</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px" id="admin-user-name">Admin</div>
+      </div>
+      <div class="sidebar-item active" onclick="adminSection('dashboard')">
+        <span class="si-icon">▦</span> Dashboard
+      </div>
+      <div class="sidebar-item" onclick="adminSection('bookings')">
+        <span class="si-icon">📋</span> Bookings
+        <span class="sidebar-badge" id="pending-badge">0</span>
+      </div>
+      <div class="sidebar-item" onclick="adminSection('customers')">
+        <span class="si-icon">👥</span> Customers
+      </div>
+      <div class="sidebar-item" onclick="adminSection('route')">
+        <span class="si-icon">🗺</span> Today's Route
+      </div>
+      <div style="margin-top:auto;padding:12px">
+        <button onclick="doLogout()" style="width:100%;padding:10px;background:rgba(255,255,255,0.1);
+          color:rgba(255,255,255,0.7);border:none;border-radius:8px;cursor:pointer;font-size:13px">
+          Sign out
+        </button>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="admin-main" id="admin-main-content">
+      <!-- Loading state -->
+      <div id="admin-loading" style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--ink-light)">
+        Loading dashboard...
+      </div>
+
+      <!-- Dashboard section -->
+      <div id="admin-section-dashboard" style="display:none">
+        <div class="admin-header">
+          <div>
+            <h2>Dashboard</h2>
+            <p id="admin-date-label">Today</p>
+          </div>
+          <span class="admin-date" id="admin-today-label"></span>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Revenue this month</div>
+            <div class="kpi-value" id="kpi-revenue">£0</div>
+            <div class="kpi-delta" id="kpi-revenue-delta"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Active customers</div>
+            <div class="kpi-value" id="kpi-customers">0</div>
+            <div class="kpi-delta" id="kpi-new-customers"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Jobs this week</div>
+            <div class="kpi-value" id="kpi-jobs">0</div>
+            <div class="kpi-delta" id="kpi-jobs-delta"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Avg rating</div>
+            <div class="kpi-value" id="kpi-rating">—</div>
+            <div class="kpi-delta" id="kpi-rating-count"></div>
+          </div>
+        </div>
+
+        <!-- Today's schedule -->
+        <div class="admin-card">
+          <div class="admin-card-title">
+            Today's Schedule
+            <span class="card-action" onclick="adminSection('bookings')">View all →</span>
+          </div>
+          <div id="todays-schedule" class="schedule-list">
+            <div style="color:var(--ink-light);font-size:14px;padding:20px 0;text-align:center">No jobs today</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bookings section -->
+      <div id="admin-section-bookings" style="display:none">
+        <div class="admin-header">
+          <div><h2>Bookings</h2><p>All upcoming jobs</p></div>
+          <input type="date" id="booking-filter-date" onchange="loadAdminBookings()"
+            style="border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:Inter,sans-serif">
+        </div>
+        <div class="admin-card">
+          <table class="jobs-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Address</th>
+                <th>Date & Time</th>
+                <th>Size</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Crew</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-table-body">
+              <tr><td colspan="7" style="text-align:center;color:var(--ink-light);padding:24px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Customers section -->
+      <div id="admin-section-customers" style="display:none">
+        <div class="admin-header"><div><h2>Customers</h2><p>All registered customers</p></div></div>
+        <div class="admin-card">
+          <table class="jobs-table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Phone</th><th>Postcode</th><th>Garden</th><th>Frequency</th><th>Price/cut</th></tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <tr><td colspan="7" style="text-align:center;color:var(--ink-light);padding:24px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Route section -->
+      <div id="admin-section-route" style="display:none">
+        <div class="admin-header"><div><h2>Today's Route</h2><p>Live job map</p></div></div>
+        <div class="admin-card">
+          <div id="admin-route-map" style="width:100%;height:400px;border-radius:12px;background:#eaf2eb;margin-bottom:16px"></div>
+          <div id="admin-route-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════ MAPS / ROUTE PAGE ═══════════════════ -->
 <div class="page" id="page-maps">
   <div class="maps-layout">
@@ -1614,9 +1787,9 @@
       <button class="btn-navigate">Navigate</button>
     </div>
 
-    <!-- Job list -->
-    <div class="crew-jobs" id="crew-jobs-list">
-      <!-- Generated by JS -->
+    <!-- Job list — real data -->
+    <div id="crew-jobs-real" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px">Loading jobs...</div>
     </div>
 
     <!-- Photo upload -->
@@ -2895,15 +3068,14 @@
     }, 100);
   }
 
-  function confirmBooking() {
-    // Validate required fields
-    const name = document.getElementById('contact-name')?.value.trim();
+  async function confirmBooking() {
+    const name  = document.getElementById('contact-name')?.value.trim();
     const email = document.getElementById('contact-email')?.value.trim();
     const phone = document.getElementById('contact-phone')?.value.trim();
     const errEl = document.getElementById('contact-error');
+
     if (!name || !email || !phone) {
-      if (errEl) errEl.style.display = 'block';
-      // Highlight missing fields
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Please fill in your name, email and phone number to continue.'; }
       ['contact-name','contact-email','contact-phone'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.borderColor = !el.value.trim() ? 'var(--warn)' : 'var(--border)';
@@ -2912,17 +3084,60 @@
     }
     if (errEl) errEl.style.display = 'none';
 
-    // Store contact info
-    bookData.name = name;
-    bookData.email = email;
-    bookData.phone = phone;
+    // Show loading state
+    const btn = document.querySelector('#step-4 .btn-next');
+    if (btn) { btn.textContent = 'Confirming...'; btn.disabled = true; }
 
-    // Show success
-    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
-    document.getElementById('step-success').classList.add('active');
-    document.getElementById('booking-ref').textContent = 'NG-' + Math.floor(1000 + Math.random() * 9000);
-    window.scrollTo(0, 0);
+    try {
+      // Parse date + time from bookData
+      const dateStr = bookData.date ? new Date(bookData.date).toISOString() : new Date().toISOString();
+      const timeStr = bookData.time ? bookData.time.replace(' AM','').replace(' PM','') : '09:00';
+
+      // Map size
+      const sizeMap = { small:'SMALL', medium:'MEDIUM', large:'LARGE', xl:'XL' };
+      const gardenSize = sizeMap[bookData.size] || 'MEDIUM';
+
+      const payload = {
+        name, email, phone,
+        addressLine1: bookData.address || 'Unknown',
+        city: 'Unknown',
+        postcode: bookData.postcode || 'Unknown',
+        latitude: bookData.lat,
+        longitude: bookData.lng,
+        gardenSize,
+        gardenAreaM2: bookData.gardenAreaM2,
+        gardenNotes: document.getElementById('addr-notes')?.value || undefined,
+        overgrown: bookData.extras?.overgrown || false,
+        clippings: bookData.extras?.clippings || false,
+        isSunday: bookData.isSunday || false,
+        totalPriceInPence: Math.round((bookData.totalPrice || bookData.price || 45) * 100),
+        frequency: bookData.freq || 'FORTNIGHTLY',
+        scheduledDate: dateStr,
+        scheduledTime: timeStr,
+      };
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Booking failed');
+
+      // Success!
+      document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
+      document.getElementById('step-success').classList.add('active');
+      document.getElementById('booking-ref').textContent = data.reference || ('NG-' + Math.floor(1000 + Math.random() * 9000));
+      window.scrollTo(0, 0);
+
+    } catch(err) {
+      console.error('Booking error:', err);
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Something went wrong. Please try again.'; }
+      if (btn) { btn.textContent = 'Confirm booking'; btn.disabled = false; }
+    }
   }
 
   function goToStepTwo() {
@@ -3329,6 +3544,323 @@
   window.initAdminMiniMap = typeof initAdminMiniMap !== "undefined" ? initAdminMiniMap : window.initAdminMiniMap;
   window.initFullRouteMap = typeof initFullRouteMap !== "undefined" ? initFullRouteMap : window.initFullRouteMap;
   window.buildRouteSidebar = typeof buildRouteSidebar !== "undefined" ? buildRouteSidebar : window.buildRouteSidebar;
+
+  // ══════════════════════════════════════
+  // AUTH
+  // ══════════════════════════════════════
+  let currentUser = null;
+
+  function requireLogin(page, tab) {
+    if (currentUser) {
+      showPage(page);
+      setTab(tab);
+      if (page === 'admin') loadAdminDashboard();
+      if (page === 'crew')  { initCrewMap(); loadCrewJobs(); }
+    } else {
+      // Store target page for after login
+      window._loginTarget = { page, tab };
+      showPage('login');
+      setTab(null);
+    }
+  }
+
+  async function doLogin() {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl    = document.getElementById('login-error');
+    const btn      = document.getElementById('login-btn');
+    errEl.style.display = 'none';
+    btn.textContent = 'Signing in...'; btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+
+      currentUser = data.user;
+      document.getElementById('admin-user-name').textContent = currentUser.name;
+
+      const target = window._loginTarget || { page: currentUser.role === 'CREW' ? 'crew' : 'admin' };
+      window._loginTarget = null;
+      showPage(target.page);
+      if (target.tab) setTab(target.tab);
+      if (target.page === 'admin') loadAdminDashboard();
+      if (target.page === 'crew')  { initCrewMap(); loadCrewJobs(); }
+
+    } catch(err) {
+      errEl.textContent = 'Invalid email or password'; errEl.style.display = 'block';
+    } finally {
+      btn.textContent = 'Sign in →'; btn.disabled = false;
+    }
+  }
+
+  async function doLogout() {
+    await fetch('/api/auth/login', { method: 'DELETE' });
+    currentUser = null;
+    showPage('home');
+    setTab(document.querySelectorAll('.nav-tab')[0]);
+  }
+
+  // ══════════════════════════════════════
+  // ADMIN
+  // ══════════════════════════════════════
+  let adminCurrentSection = 'dashboard';
+
+  function adminSection(section) {
+    adminCurrentSection = section;
+    ['dashboard','bookings','customers','route'].forEach(s => {
+      const el = document.getElementById('admin-section-' + s);
+      if (el) el.style.display = s === section ? 'block' : 'none';
+    });
+    document.querySelectorAll('.sidebar-item').forEach((item, i) => {
+      item.classList.toggle('active', i === ['dashboard','bookings','customers','route'].indexOf(section));
+    });
+    if (section === 'bookings')  loadAdminBookings();
+    if (section === 'customers') loadAdminCustomers();
+    if (section === 'route')     loadAdminRoute();
+  }
+
+  async function loadAdminDashboard() {
+    document.getElementById('admin-loading').style.display = 'flex';
+    document.getElementById('admin-section-dashboard').style.display = 'none';
+
+    // Set date label
+    const today = new Date();
+    document.getElementById('admin-today-label').textContent =
+      today.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+    document.getElementById('admin-date-label').textContent =
+      'Week of ' + today.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+
+    try {
+      const res = await fetch('/api/dashboard');
+      if (!res.ok) throw new Error('Failed');
+      const { stats, todaysJobs } = await res.json();
+
+      // KPIs
+      document.getElementById('kpi-revenue').textContent = '£' + Math.round((stats.revenueThisMonth || 0) / 100).toLocaleString();
+      const revDelta = stats.revenueLastMonth ? Math.round(((stats.revenueThisMonth - stats.revenueLastMonth) / stats.revenueLastMonth) * 100) : 0;
+      document.getElementById('kpi-revenue-delta').textContent = (revDelta >= 0 ? '↑' : '↓') + Math.abs(revDelta) + '% vs last month';
+      document.getElementById('kpi-revenue-delta').className = 'kpi-delta' + (revDelta >= 0 ? '' : ' neg');
+
+      document.getElementById('kpi-customers').textContent = stats.activeCustomers || 0;
+      document.getElementById('kpi-new-customers').textContent = '+' + (stats.newCustomersThisMonth || 0) + ' new this month';
+
+      document.getElementById('kpi-jobs').textContent = stats.jobsThisWeek || 0;
+      const jobDelta = stats.jobsLastWeek ? stats.jobsThisWeek - stats.jobsLastWeek : 0;
+      document.getElementById('kpi-jobs-delta').textContent = (jobDelta >= 0 ? '+' : '') + jobDelta + ' vs last week';
+
+      if (stats.avgRating) {
+        document.getElementById('kpi-rating').textContent = stats.avgRating.toFixed(1) + ' ★';
+        document.getElementById('kpi-rating-count').textContent = stats.totalRatings + ' reviews';
+      }
+
+      // Pending badge
+      const pendingCount = (todaysJobs || []).filter(j => j.status === 'PENDING').length;
+      document.getElementById('pending-badge').textContent = pendingCount;
+
+      // Today's schedule
+      const schedEl = document.getElementById('todays-schedule');
+      if (!todaysJobs || todaysJobs.length === 0) {
+        schedEl.innerHTML = '<div style="color:var(--ink-light);font-size:14px;padding:20px 0;text-align:center">No jobs scheduled today</div>';
+      } else {
+        schedEl.innerHTML = todaysJobs.map(b => `
+          <div class="schedule-item">
+            <div class="schedule-time">${b.scheduledTime}</div>
+            <div class="schedule-info">
+              <div class="schedule-name">${b.customer?.name || 'Unknown'}</div>
+              <div class="schedule-addr">${b.customer?.addressLine1 || ''}, ${b.customer?.postcode || ''}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div class="schedule-price">£${Math.round((b.priceInPence || 0) / 100)}</div>
+              <span class="status-badge ${b.status.toLowerCase()}">${b.status}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+    } catch(err) {
+      console.error('Dashboard load error:', err);
+    }
+
+    document.getElementById('admin-loading').style.display = 'none';
+    document.getElementById('admin-section-dashboard').style.display = 'block';
+  }
+
+  async function loadAdminBookings() {
+    const dateInput = document.getElementById('booking-filter-date');
+    const dateParam = dateInput?.value ? '?date=' + dateInput.value : '';
+    const tbody = document.getElementById('bookings-table-body');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-light)">Loading...</td></tr>';
+
+    try {
+      const res = await fetch('/api/bookings' + dateParam);
+      const { bookings } = await res.json();
+      if (!bookings || !bookings.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-light)">No bookings found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = bookings.map(b => `
+        <tr>
+          <td><strong>${b.customer?.name || '—'}</strong><br><small style="color:var(--ink-light)">${b.customer?.email || ''}</small></td>
+          <td>${b.customer?.addressLine1 || '—'}, ${b.customer?.postcode || ''}</td>
+          <td>${new Date(b.scheduledDate).toLocaleDateString('en-GB', {day:'numeric',month:'short'})} · ${b.scheduledTime}</td>
+          <td>${b.gardenSize}</td>
+          <td>£${Math.round((b.priceInPence || 0) / 100)}</td>
+          <td><span class="status-badge ${b.status.toLowerCase()}">${b.status}</span></td>
+          <td>${b.job?.crew?.name || '<span style="color:var(--ink-light)">Unassigned</span>'}</td>
+        </tr>
+      `).join('');
+    } catch(err) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--warn)">Error loading bookings</td></tr>';
+    }
+  }
+
+  async function loadAdminCustomers() {
+    const tbody = document.getElementById('customers-table-body');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-light)">Loading...</td></tr>';
+    try {
+      const res = await fetch('/api/customers');
+      const { customers } = await res.json();
+      if (!customers?.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-light)">No customers yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = customers.map(c => `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td>${c.email}</td>
+          <td>${c.phone}</td>
+          <td>${c.postcode}</td>
+          <td>${c.gardenSize}${c.gardenAreaM2 ? ' (' + c.gardenAreaM2 + 'm²)' : ''}</td>
+          <td>${c.frequency}</td>
+          <td>£${Math.round((c.pricePerCut || 0) / 100)}</td>
+        </tr>
+      `).join('');
+    } catch(err) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--warn);padding:24px">Error loading customers</td></tr>';
+    }
+  }
+
+  async function loadAdminRoute() {
+    const el = document.getElementById('admin-route-map');
+    const list = document.getElementById('admin-route-list');
+    try {
+      const res = await fetch('/api/jobs');
+      const { jobs } = await res.json();
+      if (!jobs?.length) {
+        if (list) list.innerHTML = '<p style="color:var(--ink-light);text-align:center;padding:20px">No jobs today</p>';
+        return;
+      }
+      // Show job list
+      list.innerHTML = jobs.map((j, i) => `
+        <div class="schedule-item">
+          <div class="schedule-time">${j.booking?.scheduledTime || '—'}</div>
+          <div class="schedule-info">
+            <div class="schedule-name">${j.booking?.customer?.name || '—'}</div>
+            <div class="schedule-addr">${j.booking?.customer?.addressLine1 || ''}, ${j.booking?.customer?.postcode || ''}</div>
+          </div>
+          <span class="status-badge ${(j.booking?.status || 'pending').toLowerCase()}">${j.booking?.status || 'PENDING'}</span>
+        </div>
+      `).join('');
+      // Plot on map
+      loadGoogleMaps(() => {
+        const routeMap = new google.maps.Map(el, {
+          zoom: 12, mapTypeId: 'roadmap', mapId: 'DEMO_MAP_ID',
+          center: { lat: 51.458, lng: -0.128 },
+          disableDefaultUI: true, zoomControl: true,
+        });
+        jobs.forEach((j, i) => {
+          const lat = j.booking?.customer?.latitude;
+          const lng = j.booking?.customer?.longitude;
+          if (!lat || !lng) return;
+          const dot = document.createElement('div');
+          dot.style.cssText = 'width:28px;height:28px;border-radius:50%;background:var(--green-mid);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)';
+          dot.textContent = i + 1;
+          new google.maps.marker.AdvancedMarkerElement({ position: { lat, lng }, map: routeMap, content: dot });
+        });
+      });
+    } catch(err) {
+      list.innerHTML = '<p style="color:var(--warn);padding:20px">Error loading route</p>';
+    }
+  }
+
+  // ══════════════════════════════════════
+  // CREW — load real jobs
+  // ══════════════════════════════════════
+  async function loadCrewJobs() {
+    const crewJobs = document.getElementById('crew-jobs-real');
+    if (!crewJobs) return;
+
+    try {
+      const res = await fetch('/api/jobs');
+      const { jobs } = await res.json();
+      if (!jobs?.length) {
+        crewJobs.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.5);padding:40px">No jobs assigned for today</div>';
+        return;
+      }
+      crewJobs.innerHTML = jobs.map((j, i) => {
+        const b = j.booking;
+        const c = b?.customer;
+        const isDone = b?.status === 'COMPLETED';
+        const isNow  = b?.status === 'IN_PROGRESS';
+        return `
+          <div class="crew-job-card ${isNow ? 'current-job' : ''}">
+            <div class="crew-job-header">
+              <div class="job-stop-num ${isDone ? 'done' : isNow ? 'now' : i === 0 ? 'next' : 'later'}">${i + 1}</div>
+              <div class="crew-job-info">
+                <div class="crew-job-name">${c?.name || 'Unknown'}</div>
+                <div class="crew-job-addr">${c?.addressLine1 || ''}, ${c?.postcode || ''}</div>
+                <div class="crew-job-tags">
+                  <span class="crew-tag time">${b?.scheduledTime || ''}</span>
+                  <span class="crew-tag size">${c?.gardenSize || ''}</span>
+                  ${c?.gardenNotes ? '<span class="crew-tag green">Notes</span>' : ''}
+                </div>
+              </div>
+              <div class="crew-job-price">£${Math.round((b?.priceInPence || 0) / 100)}</div>
+            </div>
+            ${isDone
+              ? '<div class="done-strip">✓ Completed</div>'
+              : `<div class="crew-job-actions">
+                  ${!isNow ? `<button class="crew-btn ghost" onclick="crewStartJob('${j.id}', this)">On my way</button>` : ''}
+                  <button class="crew-btn primary" onclick="crewCompleteJob('${j.id}', this)">Mark complete</button>
+                </div>`
+            }
+            ${c?.gardenNotes ? `<div style="padding:0 16px 14px;font-size:12px;color:rgba(255,255,255,0.5)">Note: ${c.gardenNotes}</div>` : ''}
+          </div>`;
+      }).join('');
+    } catch(err) {
+      if (crewJobs) crewJobs.innerHTML = '<div style="color:var(--warn);padding:20px;text-align:center">Error loading jobs</div>';
+    }
+  }
+
+  async function crewStartJob(jobId, btn) {
+    btn.textContent = '...'; btn.disabled = true;
+    try {
+      await fetch('/api/jobs/' + jobId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'IN_PROGRESS' }),
+      });
+      loadCrewJobs();
+    } catch(e) { btn.textContent = 'On my way'; btn.disabled = false; }
+  }
+
+  async function crewCompleteJob(jobId, btn) {
+    btn.textContent = '...'; btn.disabled = true;
+    try {
+      await fetch('/api/jobs/' + jobId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'COMPLETED', completedAt: new Date().toISOString() }),
+      });
+      loadCrewJobs();
+    } catch(e) { btn.textContent = 'Mark complete'; btn.disabled = false; }
+  }
+
 </script>
 </body>
 </html>
