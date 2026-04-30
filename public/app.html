@@ -1886,11 +1886,11 @@
 
   function getStopAt(e, canvas) {
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left - mapOffX) / mapScale;
+  // mx declared above
     const my = (e.clientY - rect.top - mapOffY) / mapScale;
-    const W = canvas.width, H = canvas.height;
+  // W declared above
     for (const s of STOPS) {
-      const px = s.x * W, py = s.y * H;
+  // px declared above
       const dist = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
       if (dist < 22 / mapScale) return s;
     }
@@ -1901,7 +1901,7 @@
     const s = getStopAt(e, canvas);
     const tt = document.getElementById('map-tooltip');
     if (s) {
-      const rect = canvas.getBoundingClientRect();
+  // rect declared above
       tt.style.left = (e.clientX - rect.left - 80) + 'px';
       tt.style.top = (e.clientY - rect.top - 100) + 'px';
       document.getElementById('tt-name').textContent = s.name;
@@ -1916,7 +1916,7 @@
   }
 
   function handleMapClick(e, canvas) {
-    const s = getStopAt(e, canvas);
+  // s declared above
     if (s) {
       activeStop = s.id;
       document.querySelectorAll('.route-stop').forEach(el => el.classList.remove('active-stop'));
@@ -1927,12 +1927,12 @@
 
   function mapZoom(factor) {
     mapScale = Math.min(3, Math.max(0.5, mapScale * factor));
-    const canvas = document.getElementById('map-canvas');
+  // canvas declared above
     if (canvas) drawMap(canvas);
   }
   function mapReset() {
     mapScale = 1; mapOffX = 0; mapOffY = 0;
-    const canvas = document.getElementById('map-canvas');
+  // canvas declared above
     if (canvas) drawMap(canvas);
   }
 
@@ -1994,15 +1994,15 @@
     const canvas = document.getElementById('crew-map-canvas');
     if (!canvas || crewMapInited) return;
     crewMapInited = true;
-    const wrap = canvas.parentElement;
+  // wrap declared above
     canvas.width = wrap.offsetWidth;
     canvas.height = wrap.offsetHeight;
     drawCrewMap(canvas);
   }
 
   function drawCrewMap(canvas) {
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
+  // ctx declared above
+  // W declared above
 
     // Dark map background
     ctx.fillStyle = '#1a2e1e'; ctx.fillRect(0, 0, W, H);
@@ -2029,11 +2029,11 @@
 
     // Stops
     STOPS.forEach((s, i) => {
-      const px = s.x * W * (W / 1200);
+  // px declared above
       const py = s.y * H;
       const clamp_px = Math.max(16, Math.min(W - 16, px));
       const clamp_py = Math.max(16, Math.min(H - 16, py));
-      const col = s.status === 'done' ? '#555' : s.status === 'current' ? '#2dba60' : '#1a6b35';
+  // col declared above
       ctx.beginPath(); ctx.arc(clamp_px, clamp_py, 10, 0, Math.PI * 2);
       ctx.fillStyle = col; ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -2043,21 +2043,21 @@
     // Current location pulse
     const cur = STOPS.find(s => s.status === 'current');
     if (cur) {
-      const px = Math.max(16, Math.min(W - 16, cur.x * W * (W / 1200)));
-      const py = Math.max(16, Math.min(H - 16, cur.y * H));
+  // px declared above
+  // py declared above
       ctx.beginPath(); ctx.arc(px, py, 18, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(45,186,96,0.2)'; ctx.fill();
     }
   }
 
   function buildCrewJobs() {
-    const list = document.getElementById('crew-jobs-list');
+  // list declared above
     if (!list || list.dataset.built) return;
     list.dataset.built = '1';
     STOPS.forEach((s, i) => {
       const isDone = completedJobs.has(s.id);
       const isCurrent = s.status === 'current';
-      const div = document.createElement('div');
+  // div declared above
       div.className = 'crew-job-card' + (isCurrent ? ' current-job' : '');
       div.id = 'cj-' + s.id;
       const numClass = isDone ? 'done' : isCurrent ? 'now' : s.status === 'next' ? 'next' : 'later';
@@ -2097,7 +2097,7 @@
   function markDone(id) {
     completedJobs.add(id);
     // Rebuild crew jobs
-    const list = document.getElementById('crew-jobs-list');
+  // list declared above
     list.innerHTML = ''; delete list.dataset.built;
     // Advance next stop
     const idx = STOPS.findIndex(s => s.id === id);
@@ -2109,7 +2109,7 @@
     const doneEl = document.getElementById('crew-done-count');
     if (doneEl) doneEl.textContent = completedJobs.size;
     // Redraw map
-    const canvas = document.getElementById('crew-map-canvas');
+  // canvas declared above
     if (canvas) drawCrewMap(canvas);
   }
 
@@ -2243,8 +2243,8 @@
         disableDefaultUI: true,
         gestureHandling: 'none',
       });
-      const colours = { done:'#9e9e9e', current:'#2dba60', next:'#1a6b35', later:'#0d3d1e' };
-      const path = [{ lat: 51.450, lng: -0.140 }];
+
+
       STOP_DATA.forEach((s, i) => {
         path.push({ lat: s.lat, lng: s.lng });
         new google.maps.Marker({
@@ -2280,7 +2280,7 @@
   async function lookupPostcode() {
     const raw = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
     if (!raw) return;
-    const pc = raw.length > 3 ? raw.slice(0, -3) + ' ' + raw.slice(-3) : raw;
+  // pc declared above
     const status = document.getElementById('addr-search-status');
     status.textContent = 'Finding addresses...';
     status.style.color = 'var(--green-mid)';
@@ -2288,8 +2288,8 @@
     document.getElementById('addr-confirmed').style.display = 'none';
     document.getElementById('addr-manual-wrap').style.display = 'none';
     try {
-      const r = await fetch(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${window.IDEAL_KEY}`);
-      const d = await r.json();
+  // r declared above
+  // d declared above
       if (d.code !== 2000 || !d.result || !d.result.length) {
         status.textContent = 'Postcode not found. Please enter address manually.';
         status.style.color = 'var(--warn)';
@@ -2329,7 +2329,7 @@
   }
 
   function selectFromDropdown(sel) {
-    const opt = sel.options[sel.selectedIndex];
+  // opt declared above
     if (!opt || !opt.value) return;
     if (opt.value === 'manual') {
       document.getElementById('addr-manual-wrap').style.display = 'block';
@@ -2360,7 +2360,7 @@
     const street = document.getElementById('addr-manual-street').value.trim();
     const town = document.getElementById('addr-manual-town').value.trim();
     if (!street) return;
-    const addr = street + (town ? ', ' + town : '') + ', ' + bookData.postcode;
+  // addr declared above
     bookData.address = addr;
     document.getElementById('addr-confirmed-text').textContent = addr;
     document.getElementById('addr-confirmed').style.display = 'block';
@@ -2388,7 +2388,7 @@
   function toggleExtra(key) {
     bookData.extras[key] = !bookData.extras[key];
     const toggle = document.getElementById('toggle-' + key);
-    const label = document.getElementById('extra-' + key + '-label');
+  // label declared above
     if (bookData.extras[key]) {
       toggle.style.background = 'var(--green-bright)';
       toggle.firstElementChild.style.left = '22px';
@@ -2408,7 +2408,7 @@
     let total = base;
     if (bookData.extras.overgrown) total = Math.round(total * 1.5);
     if (bookData.extras.clippings) total += 10;
-    const el = document.getElementById('price-live-amount');
+  // el declared above
     if (el) el.textContent = '£' + total;
     bookData.totalPrice = total;
   }
@@ -2416,7 +2416,7 @@
   // ── STEP NAV ───────────────────────────────────────────
   function goToStepTwo() {
     if (!bookData.lat || !bookData.lng) {
-      const s = document.getElementById('addr-search-status');
+  // s declared above
       if (s) { s.textContent = 'Please find and select your address first.'; s.style.color = 'var(--warn)'; }
       return;
     }
@@ -2425,7 +2425,7 @@
     if (banner) banner.textContent = bookData.address;
     const hint = document.getElementById('step2-map-hint');
     if (hint) hint.style.display = 'none';
-    const wrap = document.getElementById('lawn-sizer-wrap');
+  // wrap declared above
     if (wrap) wrap.style.display = 'block';
     // Delay to ensure DOM is fully rendered and visible before map init
     lawnMap = null;
@@ -2452,12 +2452,12 @@
       else if (i + 1 === visualStep) p.classList.add('active');
     });
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
-      const el = document.getElementById(id);
+  // el declared above
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
-    const el = document.getElementById('step-' + n);
+  // el declared above
     if (el) el.classList.add('active');
     if (n === 3) {
       buildDateGrid();
@@ -2472,8 +2472,8 @@
       if (wn) wn.style.display = 'block';
     }
     if (n === 4) {
-      const sizeLabels = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
-      const total = bookData.totalPrice || bookData.price || 45;
+
+
       const extras = [];
       if (bookData.extras.overgrown) extras.push('Overgrown surcharge');
       if (bookData.extras.clippings) extras.push('Clippings removal');
@@ -2511,20 +2511,12 @@
   // fullRouteMap declared above
   // routeMarkers declared above
 
-  const STOP_DATA = [
-    { name:'Sarah Johnson',  addr:'14 Oak Avenue, London SW4',  lat:51.4589, lng:-0.1294, price:'£45', time:'8:00 AM',  status:'done'    },
-    { name:'Mike Kowalski',  addr:'7 Elm Close, London SW2',    lat:51.4612, lng:-0.1178, price:'£60', time:'9:30 AM',  status:'current' },
-    { name:'Rachel Pierce',  addr:'3 Birch Road, London SW4',   lat:51.4601, lng:-0.1332, price:'£35', time:'11:00 AM', status:'next'    },
-    { name:'David Williams', addr:'22 Pine Street, London SW3', lat:51.4556, lng:-0.1244, price:'£45', time:'1:00 PM',  status:'later'   },
-    { name:'Anna Lawson',    addr:'9 Cedar Lane, London SW5',   lat:51.4578, lng:-0.1389, price:'£60', time:'2:30 PM',  status:'later'   },
-  ];
-
   function loadGoogleMaps(callback) {
     if (gmapsLoaded) { callback(); return; }
     if (window._gmapsLoading) { window._gmapsQueue = window._gmapsQueue || []; window._gmapsQueue.push(callback); return; }
     window._gmapsLoading = true;
     window._gmapsQueue = [callback];
-    const script = document.createElement('script');
+
     script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
     script.async = true;
     window.onGmapsReady = () => {
@@ -2541,7 +2533,7 @@
     const el = document.getElementById('full-route-map');
     if (!el || fullRouteMap) return;
     loadGoogleMaps(() => {
-      const centre = { lat: 51.458, lng: -0.128 };
+
       fullRouteMap = new google.maps.Map(el, {
         center: centre, zoom: 14,
         mapTypeId: 'roadmap',
@@ -2550,9 +2542,8 @@
         zoomControl: true,
       });
 
-      const infoWindow = new google.maps.InfoWindow();
-      const colours = { done:'#9e9e9e', current:'#2dba60', next:'#1a6b35', later:'#0d3d1e' };
-      const path = [];
+
+
 
       // Depot marker
       new google.maps.Marker({
@@ -2567,6 +2558,7 @@
       path.push({ lat: 51.450, lng: -0.140 });
 
       STOP_DATA.forEach((s, i) => {
+
         const pos = { lat: s.lat, lng: s.lng };
         path.push(pos);
         const marker = new google.maps.Marker({
@@ -2618,8 +2610,8 @@
         disableDefaultUI: true,
         gestureHandling: 'none',
       });
-      const colours = { done:'#9e9e9e', current:'#2dba60', next:'#1a6b35', later:'#0d3d1e' };
-      const path = [{ lat: 51.450, lng: -0.140 }];
+
+
       STOP_DATA.forEach((s, i) => {
         path.push({ lat: s.lat, lng: s.lng });
         new google.maps.Marker({
@@ -2638,7 +2630,7 @@
   // ── HERO PANEL FUNCTIONS ─────────────────────────────
   function heroLookup() {
     const q = document.getElementById('hero-addr-input').value.trim();
-    const status = document.getElementById('hero-addr-status');
+  // status declared above
     if (!q) return;
     status.textContent = 'Searching...';
     status.style.color = 'var(--green-mid)';
@@ -2649,9 +2641,9 @@
           status.textContent = ' Not found — try a postcode';
           status.style.color = 'var(--warn)'; return;
         }
-        const r = results[0];
-        const lat = r.geometry.location.lat(), lng = r.geometry.location.lng();
-        let pc = '';
+  // r declared above
+  // lat declared above
+  // pc declared above
         r.address_components?.forEach(c => { if (c.types.includes('postal_code')) pc = c.long_name; });
         bookData.lat = lat; bookData.lng = lng;
         bookData.address = r.formatted_address; bookData.postcode = pc;
@@ -2687,36 +2679,36 @@
     });
     // Update step labels
     ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
-      const el = document.getElementById(id);
+  // el declared above
       if (el) el.style.color = (i + 1 === n) ? 'var(--green-mid)' : 'var(--ink-light)';
       if (el) el.style.fontWeight = (i + 1 === n) ? '600' : '400';
     });
     const stepId = n <= 3 ? 'step-' + n : 'step-success';
-    const el = document.getElementById(stepId);
+  // el declared above
     if (el) el.classList.add('active');
 
     if (n === 2) {
       buildDateGrid();
-      const sizeLabels = {small:'Small garden',medium:'Medium garden',large:'Large garden',xl:'XL garden'};
+
       document.getElementById('s2-size-label').textContent = sizeLabels[bookData.size] || 'Your garden';
       document.getElementById('s2-price-label').textContent = '£' + bookData.price;
     }
     if (n === 3) {
-      const sizeLabels = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
+
       document.getElementById('conf-size').textContent = sizeLabels[bookData.size] || 'Garden cut';
       document.getElementById('conf-area').textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
       document.getElementById('conf-freq').textContent = bookData.freq || 'Fortnightly';
       document.getElementById('conf-dt').textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
       // Full address breakdown
-      const addrEl = document.getElementById('conf-addr');
+
       if (addrEl) {
         addrEl.innerHTML = bookData.address || 'Your address';
         if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
       }
-      const notesEl = document.getElementById('conf-notes-row');
-      const notes = document.getElementById('addr-notes')?.value;
+
+  // notes declared above
       if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
-      const notesVal = document.getElementById('conf-notes');
+
       if (notesVal && notes) notesVal.textContent = notes;
       document.getElementById('conf-price').textContent = '£' + (bookData.price || 45);
     }
@@ -2733,15 +2725,15 @@
 
   function goToStepTwo() {
     bookNextStep(2);
-    const banner = document.getElementById('step2-addr-display');
+
     if (banner) banner.textContent = bookData.address || '—';
-    const hint = document.getElementById('step2-map-hint');
+
     if (!bookData.lat || !bookData.lng) {
       if (hint) hint.textContent = 'Please go back and find your address first.';
       return;
     }
     if (hint) hint.style.display = 'none';
-    const wrap = document.getElementById('lawn-sizer-wrap');
+  // wrap declared above
     if (wrap) wrap.style.display = 'block';
     // Use longer delay to ensure step-2 is visible and map div has dimensions
     setTimeout(() => {
@@ -2753,54 +2745,54 @@
   function bookNextStep(n) {
     document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
     // Progress bar — 3 visual steps: 1=address, 2=map, 3=date+confirm
-    const visualStep = n <= 2 ? n : n - 1; // steps 3&4 share visual bar
+ // steps 3&4 share visual bar
     document.querySelectorAll('.progress-step').forEach((p, i) => {
       p.classList.remove('active', 'done');
       if (i + 1 < visualStep) p.classList.add('done');
       else if (i + 1 === visualStep) p.classList.add('active');
     });
     // Step labels
-    const labels = ['step-label-1','step-label-2','step-label-3'];
+
     labels.forEach((id, i) => {
-      const el = document.getElementById(id);
+  // el declared above
       if (!el) return;
       el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
       el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
     });
     // Show the right step
-    const stepId = n <= 4 ? 'step-' + n : 'step-success';
-    const el = document.getElementById(stepId);
+
+  // el declared above
     if (el) el.classList.add('active');
 
     if (n === 3) {
       buildDateGrid();
-      const sizeLabels = {small:'Small garden',medium:'Medium garden',large:'Large garden',xl:'XL garden'};
-      const s2size = document.getElementById('s2-size-label');
-      const s2price = document.getElementById('s2-price-label');
+
+
+
       if (s2size) s2size.textContent = sizeLabels[bookData.size] || 'Your garden';
       if (s2price) s2price.textContent = '£' + (bookData.price || 45);
     }
     if (n === 4) {
-      const sizeLabels = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
-      const confSize = document.getElementById('conf-size');
+
+
       if (confSize) confSize.textContent = sizeLabels[bookData.size] || 'Garden cut';
-      const confArea = document.getElementById('conf-area');
+
       if (confArea) confArea.textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
-      const confFreq = document.getElementById('conf-freq');
+
       if (confFreq) confFreq.textContent = bookData.freq || 'Fortnightly';
-      const confDt = document.getElementById('conf-dt');
+
       if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
-      const addrEl = document.getElementById('conf-addr');
+
       if (addrEl) {
         addrEl.innerHTML = bookData.address || 'Your address';
         if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
       }
-      const notesEl = document.getElementById('conf-notes-row');
-      const notes = document.getElementById('addr-notes')?.value;
+
+  // notes declared above
       if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
-      const notesVal = document.getElementById('conf-notes');
+
       if (notesVal && notes) notesVal.textContent = notes;
-      const confPrice = document.getElementById('conf-price');
+
       if (confPrice) confPrice.textContent = '£' + (bookData.price || 45);
     }
     window.scrollTo(0, 0);
@@ -2809,13 +2801,13 @@
   function lookupAddress() {
     const query = document.getElementById('addr-search-input').value.trim();
     if (!query) return;
-    const status = document.getElementById('addr-search-status');
+  // status declared above
     const suggestions = document.getElementById('addr-suggestions');
     status.textContent = 'Searching...';
     status.style.color = 'var(--green-mid)';
 
     loadGoogleMaps(() => {
-      const geocoder = new google.maps.Geocoder();
+
       geocoder.geocode({ address: query + ', UK' }, (results, gStatus) => {
         if (gStatus !== 'OK' || !results || results.length === 0) {
           status.textContent = ' Not found — try adding more detail or just use the postcode';
@@ -2852,9 +2844,9 @@
   };
 
   function selectAddress(result) {
-    const lat = result.geometry.location.lat();
-    const lng = result.geometry.location.lng();
-    const street = result.formatted_address;
+  // lat declared above
+  // lng declared above
+
     let postcode = '';
     result.address_components?.forEach(c => {
       if (c.types.includes('postal_code')) postcode = c.long_name;
@@ -2986,13 +2978,13 @@
 
 
   function heroSelectAddress(sel) {
-    const opt = sel.options[sel.selectedIndex];
+  // opt declared above
     if (!opt || !opt.value) return;
     bookData.lat = parseFloat(opt.dataset.lat);
     bookData.lng = parseFloat(opt.dataset.lng);
     bookData.address = opt.dataset.addr;
     bookData.postcode = document.getElementById('hero-addr-input').value.trim().toUpperCase().replace(/\s+/g,'');
-    const raw = bookData.postcode;
+  // raw declared above
     bookData.postcode = raw.length > 3 ? raw.slice(0,-3) + ' ' + raw.slice(-3) : raw;
     showPage('book');
     setTab(document.querySelectorAll('.nav-tab')[1]);
