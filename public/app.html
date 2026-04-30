@@ -2786,10 +2786,10 @@
     if (hint) hint.style.display = 'none';
     const wrap = document.getElementById('lawn-sizer-wrap');
     if (wrap) wrap.style.display = 'block';
-    setTimeout(() => {
+    loadGoogleMaps(() => {
       lawnMap = null;
       initLawnSizer(bookData.lat, bookData.lng);
-    }, 400);
+    });
   }
 
   function bookNextStep(n) {
