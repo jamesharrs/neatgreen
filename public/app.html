@@ -3007,18 +3007,15 @@
     const el = document.getElementById('lawn-map');
     if (!el) return;
 
-    // Clean up previous polygon
+    // Clear old polygon
     if (lawnPolygon) { lawnPolygon.setMap(null); lawnPolygon = null; }
 
-    // Create map once, reuse on redraw
+    // Create map once
     if (!lawnMap) {
       lawnMap = new google.maps.Map(el, {
         center: { lat, lng }, zoom: 19,
         mapTypeId: 'satellite', tilt: 0,
-        disableDefaultUI: false,
-        zoomControl: true,
-        scrollwheel: true,
-        gestureHandling: 'cooperative',
+        disableDefaultUI: true, zoomControl: true,
         mapId: 'DEMO_MAP_ID',
       });
     } else {
@@ -3029,67 +3026,79 @@
 
     const hint = document.getElementById('lawn-draw-hint');
     const result = document.getElementById('lawn-result');
-    if (hint) { hint.style.display = 'block'; hint.textContent = 'Click points around your lawn — double-click on last point to finish'; }
+    if (hint) { hint.style.display = 'block'; hint.textContent = 'Click to place points around your lawn — double-click to finish'; }
     if (result) result.style.display = 'none';
 
-    let vertices = [];
-    let tempMarkers = [];
-    let tempLine = null;
+    let vertices = [];   // google.maps.LatLng[]
+    let handles = [];    // AdvancedMarkerElement[] — one per vertex, draggable
+    let previewPoly = null;
 
-    function cleanup() {
-      tempMarkers.forEach(m => m.map = null);
-      tempMarkers = [];
-      if (tempLine) { tempLine.setMap(null); tempLine = null; }
+    function makeDot(filled) {
+      const d = document.createElement('div');
+      d.style.cssText = 'width:12px;height:12px;border-radius:50%;cursor:grab;' +
+        'background:' + (filled ? '#2dba60' : 'white') + ';' +
+        'border:2.5px solid #2dba60;box-shadow:0 1px 4px rgba(0,0,0,0.4);' +
+        'touch-action:none;pointer-events:auto;';
+      return d;
     }
 
-    function updateLine() {
-      if (tempLine) tempLine.setMap(null);
+    function redraw() {
+      if (previewPoly) previewPoly.setMap(null);
       if (vertices.length < 2) return;
-      tempLine = new google.maps.Polyline({
-        path: [...vertices, vertices[0]],
-        strokeColor: '#2dba60', strokeWeight: 2, strokeOpacity: 0.7, map: lawnMap,
-      });
-    }
-
-    function finish() {
-      if (vertices.length < 3) return;
-      cleanup();
-      google.maps.event.clearListeners(lawnMap, 'click');
-      google.maps.event.clearListeners(lawnMap, 'dblclick');
-
-      lawnPolygon = new google.maps.Polygon({
+      previewPoly = new google.maps.Polygon({
         paths: vertices,
-        fillColor: '#2dba60', fillOpacity: 0.25,
-        strokeColor: '#2dba60', strokeWeight: 2,
-        editable: true,
+        strokeColor: '#2dba60', strokeWeight: 2, strokeOpacity: 0.8,
+        fillColor: '#2dba60', fillOpacity: vertices.length > 2 ? 0.2 : 0,
         map: lawnMap,
       });
+      if (vertices.length >= 3) updateLawnArea(previewPoly);
+    }
 
-      if (hint) hint.style.display = 'none';
+    function addHandle(latLng, index) {
+      const marker = new google.maps.marker.AdvancedMarkerElement({
+        position: latLng,
+        map: lawnMap,
+        content: makeDot(true),
+        gmpDraggable: true,
+      });
+      marker.addListener('drag', e => {
+        vertices[index] = e.latLng;
+        redraw();
+      });
+      marker.addListener('dragend', e => {
+        vertices[index] = e.latLng;
+        redraw();
+        if (vertices.length >= 3) updateLawnArea(previewPoly);
+      });
+      handles.push(marker);
+      return marker;
+    }
+
+    function finishDrawing() {
+      if (vertices.length < 3) return;
+      google.maps.event.clearListeners(lawnMap, 'click');
+      google.maps.event.clearListeners(lawnMap, 'dblclick');
+      if (hint) hint.textContent = 'Drag the dots to adjust your lawn boundary';
+      lawnPolygon = previewPoly; // promote to lawnPolygon
       updateLawnArea(lawnPolygon);
-
-      const path = lawnPolygon.getPath();
-      google.maps.event.addListener(path, 'set_at',    () => updateLawnArea(lawnPolygon));
-      google.maps.event.addListener(path, 'insert_at', () => updateLawnArea(lawnPolygon));
-      google.maps.event.addListener(path, 'remove_at', () => updateLawnArea(lawnPolygon));
     }
 
     lawnMap.addListener('click', e => {
-      if (lawnPolygon) return;
-      vertices.push(e.latLng);
-      // Small dot
-      const dot = document.createElement('div');
-      dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:#2dba60;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.5)';
-      tempMarkers.push(new google.maps.marker.AdvancedMarkerElement({ position: e.latLng, map: lawnMap, content: dot }));
-      updateLine();
-      if (hint) hint.textContent = vertices.length + ' point' + (vertices.length > 1 ? 's' : '') + ' — double-click to finish';
+      const latLng = e.latLng;
+      vertices.push(latLng);
+      addHandle(latLng, vertices.length - 1);
+      redraw();
+      if (hint) hint.textContent = vertices.length + ' point' + (vertices.length !== 1 ? 's' : '') + ' placed — double-click to close shape';
     });
 
     lawnMap.addListener('dblclick', e => {
-      if (lawnPolygon) return;
-      // Remove the extra point added by the preceding click event
-      if (vertices.length > 0) { vertices.pop(); if (tempMarkers.length > 0) { tempMarkers[tempMarkers.length-1].map = null; tempMarkers.pop(); } }
-      finish();
+      // dblclick fires a click first — remove the duplicate last point
+      if (vertices.length > 0) {
+        vertices.pop();
+        const last = handles.pop();
+        if (last) last.map = null;
+      }
+      if (vertices.length >= 3) finishDrawing();
     });
   }
 
@@ -3142,9 +3151,8 @@
     if (lawnPolygon) { lawnPolygon.setMap(null); lawnPolygon = null; }
     document.getElementById('lawn-result').style.display = 'none';
     document.getElementById('lawn-draw-hint').style.display = 'block';
-    // Reinitialise the click-to-draw on the existing map
-    if (lawnMap && bookData.lat && bookData.lng) {
-      initLawnSizer(bookData.lat, bookData.lng);
+    if (bookData.lat && bookData.lng) {
+      loadGoogleMaps(() => initLawnSizer(bookData.lat, bookData.lng));
     }
   }
 
