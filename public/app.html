@@ -3051,7 +3051,8 @@
 
   // Auto-init admin mini map when admin page loads
   setTimeout(() => {
-    if (document.getElementById('page-admin').classList.contains('active')) {
+    const adminPage = document.getElementById('page-admin');
+    if (adminPage && adminPage.classList.contains('active')) {
       initAdminMiniMap();
     }
   }, 500);
