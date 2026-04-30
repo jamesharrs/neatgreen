@@ -3045,31 +3045,13 @@
 
   // Auto-init admin mini map when admin page loads
   setTimeout(() => {
-    if (document.getElementById('page-admin').classList.contains('active')) {
+    const ap = document.getElementById('page-admin');
+    if (ap && ap.classList.contains('active')) {
       initAdminMiniMap();
     }
   }, 500);
 
 
-  function heroSelectAddress(sel) {
-  // opt declared above
-    if (!opt || !opt.value) return;
-    bookData.lat = parseFloat(opt.dataset.lat);
-    bookData.lng = parseFloat(opt.dataset.lng);
-    bookData.address = opt.dataset.addr;
-    bookData.postcode = document.getElementById('hero-addr-input').value.trim().toUpperCase().replace(/\s+/g,'');
-  // raw declared above
-    bookData.postcode = raw.length > 3 ? raw.slice(0,-3) + ' ' + raw.slice(-3) : raw;
-    showPage('book');
-    setTab(document.querySelectorAll('.nav-tab')[1]);
-    setTimeout(() => {
-      document.getElementById('addr-street').value = bookData.address;
-      document.getElementById('addr-postcode').value = bookData.postcode;
-      document.getElementById('addr-lat').value = bookData.lat;
-      document.getElementById('addr-lng').value = bookData.lng;
-      goToStepTwo();
-    }, 150);
-  }
   window._heroSelectAddress = heroSelectAddress;
 
 
