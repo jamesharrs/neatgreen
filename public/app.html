@@ -1002,7 +1002,7 @@
           </div>
         </div>
 
-        <button class="btn-book" onclick="heroStartBooking()">
+        <button class="btn-book" onclick="showPage('book'); setTab(document.querySelectorAll('.nav-tab')[1])">
           Start booking now →
         </button>
         <div class="booking-trust">Secure · Free cancellation · No contract</div>
@@ -1097,21 +1097,52 @@
     <div class="booking-step active" id="step-1">
       <div class="step-title">Where is your garden?</div>
       <div class="form-group">
-        <label class="form-label">Address or postcode</label>
+        <label class="form-label">Your postcode</label>
         <div style="display:flex;gap:8px">
-          <input type="text" class="form-input" id="addr-search-input"
-            placeholder="e.g. Brightley Mill, Okehampton or EX20 3PX"
-            onkeydown="if(event.key==='Enter') lookupAddress()" style="flex:1">
-          <button onclick="lookupAddress()" style="padding:13px 18px;background:var(--green-deep);
-            color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap">Find →</button>
+          <input type="text" class="form-input" id="postcode-input"
+            placeholder="e.g. EX20 3RA"
+            onkeydown="if(event.key==='Enter') lookupPostcode()"
+            style="flex:1;text-transform:uppercase;max-width:160px">
+          <button onclick="lookupPostcode()" style="padding:13px 18px;background:var(--green-deep);
+            color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap">
+            Find addresses →
+          </button>
         </div>
         <div id="addr-search-status" style="font-size:12px;color:var(--ink-light);margin-top:6px">
-          Type your full address, farm name, or postcode and click Find
+          Enter your postcode to see matching addresses
         </div>
-        <div id="addr-suggestions" style="display:none;border:1.5px solid var(--border);
-          border-radius:8px;background:white;margin-top:4px;overflow:hidden;
-          box-shadow:0 4px 16px rgba(0,0,0,0.1);z-index:9999;position:relative"></div>
       </div>
+      <!-- Address dropdown -->
+      <div id="addr-dropdown-wrap" style="display:none;margin-bottom:16px">
+        <label class="form-label">Select your address</label>
+        <select class="form-select" id="addr-select" onchange="selectFromDropdown(this)">
+          <option value="">— Choose your address —</option>
+        </select>
+        <div style="font-size:12px;color:var(--ink-light);margin-top:6px">
+          Can't see your address? <a href="#" onclick="showManualEntry();return false"
+            style="color:var(--green-mid);font-weight:600">Enter manually</a>
+        </div>
+      </div>
+      <!-- Manual entry fallback -->
+      <div id="addr-manual-wrap" style="display:none;margin-bottom:16px">
+        <label class="form-label">Street address</label>
+        <input type="text" class="form-input" id="addr-manual-street"
+          placeholder="House number and street name" style="margin-bottom:8px">
+        <label class="form-label" style="margin-top:8px">Town / City</label>
+        <input type="text" class="form-input" id="addr-manual-town" placeholder="Town or city">
+        <button onclick="confirmManualAddress()" style="margin-top:10px;padding:10px 18px;
+          background:var(--green-mid);color:white;border:none;border-radius:8px;
+          cursor:pointer;font-weight:600;font-size:14px">Use this address</button>
+      </div>
+      <!-- Confirmed address banner -->
+      <div id="addr-confirmed" style="display:none;background:var(--green-pale);
+        border:1px solid var(--green-bright);border-radius:8px;padding:12px 14px;margin-bottom:8px;
+        font-size:14px;color:var(--green-deep)">
+        <strong>Selected:</strong> <span id="addr-confirmed-text"></span>
+        <a href="#" onclick="resetAddress();return false"
+          style="float:right;color:var(--ink-light);font-size:12px">Change</a>
+      </div>
+      <!-- Hidden fields -->
 
       <!-- Hidden fields -->
       <input type="hidden" id="addr-street">
@@ -1191,6 +1222,61 @@
           <div class="freq-pill selected" onclick="selectBookFreq(this,'FORTNIGHTLY')">Fortnightly</div>
           <div class="freq-pill" onclick="selectBookFreq(this,'MONTHLY')">Monthly</div>
         </div>
+      </div>
+
+      <!-- SERVICE EXTRAS -->
+      <div class="form-group" style="margin-top:4px">
+        <label class="form-label">Any extras?</label>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label style="display:flex;align-items:center;justify-content:space-between;
+            padding:14px 16px;border:1.5px solid var(--border);border-radius:10px;
+            cursor:pointer;background:white;transition:all 0.2s" id="extra-overgrown-label"
+            onclick="toggleExtra('overgrown')">
+            <div>
+              <div style="font-weight:600;font-size:14px;color:var(--green-deep)">Overgrown lawn</div>
+              <div style="font-size:12px;color:var(--ink-light);margin-top:2px">Not cut in 8+ weeks — first cut takes longer</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-weight:700;color:var(--green-mid);font-size:15px">+50%</span>
+              <div id="toggle-overgrown" style="width:44px;height:24px;border-radius:12px;
+                background:var(--border);position:relative;transition:all 0.2s;flex-shrink:0">
+                <div style="width:20px;height:20px;border-radius:50%;background:white;
+                  position:absolute;top:2px;left:2px;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>
+              </div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;
+            padding:14px 16px;border:1.5px solid var(--border);border-radius:10px;
+            cursor:pointer;background:white;transition:all 0.2s" id="extra-clippings-label"
+            onclick="toggleExtra('clippings')">
+            <div>
+              <div style="font-weight:600;font-size:14px;color:var(--green-deep)">Remove grass clippings</div>
+              <div style="font-size:12px;color:var(--ink-light);margin-top:2px">We bag and take away all clippings</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-weight:700;color:var(--green-mid);font-size:15px">+£10</span>
+              <div id="toggle-clippings" style="width:44px;height:24px;border-radius:12px;
+                background:var(--border);position:relative;transition:all 0.2s;flex-shrink:0">
+                <div style="width:20px;height:20px;border-radius:50%;background:white;
+                  position:absolute;top:2px;left:2px;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- LIVE PRICE UPDATE -->
+      <div id="price-live" style="background:var(--green-pale);border-radius:10px;
+        padding:14px 18px;display:flex;justify-content:space-between;align-items:center;
+        border:1px solid var(--border);margin-top:4px">
+        <div style="font-size:14px;color:var(--ink-light)">Total per cut</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;color:var(--green-deep)" id="price-live-amount">£45</div>
+      </div>
+
+      <!-- WEATHER NOTICE -->
+      <div id="weather-notice" style="display:none;margin-top:12px;padding:12px 16px;
+        background:#fff8e1;border-radius:10px;border:1px solid #ffe082;font-size:13px;color:#7a5c00">
+        <strong>Weather notice:</strong> We monitor the forecast for your area. If conditions are unsuitable on the day, we'll reschedule within 48 hours and notify you by text — at no extra cost.
       </div>
 
       <div class="form-group" style="margin-top:24px">
@@ -2032,6 +2118,404 @@
     if (id === 'admin') setTimeout(() => initAdminMiniMap(), 50);
     if (id === 'crew') initCrewMap();
   };
+
+  // ══════════════════════════════════════
+  // GOOGLE MAPS — shared state
+  // ══════════════════════════════════════
+  let gmapsLoaded = false;
+  let lawnMap = null, lawnDrawingManager = null, lawnPolygon = null;
+  let fullRouteMap = null, adminMiniMap = null;
+  let routeMarkers = [], routePolyline = null;
+
+  const STOP_DATA = [
+    { name:'Sarah Johnson',  addr:'14 Oak Avenue, London SW4',  lat:51.4589, lng:-0.1294, price:'£45', time:'8:00 AM',  status:'done'    },
+    { name:'Mike Kowalski',  addr:'7 Elm Close, London SW2',    lat:51.4612, lng:-0.1178, price:'£60', time:'9:30 AM',  status:'current' },
+    { name:'Rachel Pierce',  addr:'3 Birch Road, London SW4',   lat:51.4601, lng:-0.1332, price:'£35', time:'11:00 AM', status:'next'    },
+    { name:'David Williams', addr:'22 Pine Street, London SW3', lat:51.4556, lng:-0.1244, price:'£45', time:'1:00 PM',  status:'later'   },
+    { name:'Anna Lawson',    addr:'9 Cedar Lane, London SW5',   lat:51.4578, lng:-0.1389, price:'£60', time:'2:30 PM',  status:'later'   },
+  ];
+
+  function loadGoogleMaps(callback) {
+    if (gmapsLoaded) { callback(); return; }
+    if (window._gmapsLoading) { window._gmapsQueue = window._gmapsQueue || []; window._gmapsQueue.push(callback); return; }
+    window._gmapsLoading = true;
+    window._gmapsQueue = [callback];
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
+    script.async = true;
+    window.onGmapsReady = () => {
+      gmapsLoaded = true;
+      window._gmapsLoading = false;
+      (window._gmapsQueue || []).forEach(fn => fn());
+      window._gmapsQueue = [];
+    };
+    document.head.appendChild(script);
+  }
+
+  // ── FULL ROUTE MAP (maps page) ────────────────────────────
+  function initFullRouteMap() {
+    const el = document.getElementById('full-route-map');
+    if (!el || fullRouteMap) return;
+    loadGoogleMaps(() => {
+      const centre = { lat: 51.458, lng: -0.128 };
+      fullRouteMap = new google.maps.Map(el, {
+        center: centre, zoom: 14,
+        mapTypeId: 'roadmap',
+        styles: greenMapStyles(),
+        disableDefaultUI: true,
+        zoomControl: true,
+      });
+
+      const infoWindow = new google.maps.InfoWindow();
+      const colours = { done:'#9e9e9e', current:'#2dba60', next:'#1a6b35', later:'#0d3d1e' };
+      const path = [];
+
+      // Depot marker
+      new google.maps.Marker({
+        position: { lat: 51.450, lng: -0.140 },
+        map: fullRouteMap,
+        title: 'Depot',
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10,
+          fillColor: '#e8ff5a', fillOpacity: 1, strokeColor: '#0d3d1e', strokeWeight: 2 },
+        label: { text: '', fontSize: '14px' },
+        zIndex: 10,
+      });
+      path.push({ lat: 51.450, lng: -0.140 });
+
+      STOP_DATA.forEach((s, i) => {
+        const pos = { lat: s.lat, lng: s.lng };
+        path.push(pos);
+        const marker = new google.maps.Marker({
+          position: pos, map: fullRouteMap,
+          title: s.name,
+          label: { text: String(i + 1), color: 'white', fontWeight: 'bold', fontSize: '12px' },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: s.status === 'current' ? 20 : 15,
+            fillColor: colours[s.status],
+            fillOpacity: 1, strokeColor: 'white', strokeWeight: 2,
+          },
+          zIndex: s.status === 'current' ? 20 : 5,
+        });
+        marker.addListener('click', () => {
+          infoWindow.setContent(`
+            <div style="font-family:Inter,sans-serif;padding:4px">
+              <div style="font-weight:700;font-size:15px;color:#0d3d1e">${s.name}</div>
+              <div style="font-size:13px;color:#666;margin:4px 0">${s.addr}</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <span style="background:#e8f5e9;color:#1a5c2a;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600">${s.time}</span>
+                <span style="background:#0d3d1e;color:white;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:700">${s.price}</span>
+              </div>
+            </div>
+          `);
+          infoWindow.open(fullRouteMap, marker);
+        });
+        routeMarkers.push(marker);
+      });
+
+      // Route polyline
+      routePolyline = new google.maps.Polyline({
+        path, map: fullRouteMap,
+        strokeColor: '#2dba60', strokeOpacity: 0.8, strokeWeight: 3,
+        icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3 }, repeat: '80px' }],
+      });
+    });
+  }
+
+  // ── ADMIN MINI MAP ────────────────────────────────────────
+  function initAdminMiniMap() {
+    const el = document.getElementById('admin-mini-map');
+    if (!el || adminMiniMap) return;
+    loadGoogleMaps(() => {
+      adminMiniMap = new google.maps.Map(el, {
+        center: { lat: 51.458, lng: -0.128 }, zoom: 13,
+        mapTypeId: 'roadmap',
+        styles: greenMapStyles(),
+        disableDefaultUI: true,
+        gestureHandling: 'none',
+      });
+      const colours = { done:'#9e9e9e', current:'#2dba60', next:'#1a6b35', later:'#0d3d1e' };
+      const path = [{ lat: 51.450, lng: -0.140 }];
+      STOP_DATA.forEach((s, i) => {
+        path.push({ lat: s.lat, lng: s.lng });
+        new google.maps.Marker({
+          position: { lat: s.lat, lng: s.lng }, map: adminMiniMap,
+          label: { text: String(i+1), color:'white', fontWeight:'bold', fontSize:'10px' },
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12,
+            fillColor: colours[s.status], fillOpacity:1, strokeColor:'white', strokeWeight:2 },
+        });
+      });
+      new google.maps.Polyline({ path, map: adminMiniMap,
+        strokeColor:'#2dba60', strokeOpacity:0.7, strokeWeight:2 });
+    });
+  }
+
+  // ── LAWN SIZER (booking step 2) ───────────────────────────
+  // ══════════════════════════════════════
+  // BOOKING DATA
+  // ══════════════════════════════════════
+  let bookData = {
+    size: 'medium', price: 45, freq: 'FORTNIGHTLY',
+    date: '', time: '', lat: null, lng: null,
+    address: '', postcode: '',
+    extras: { overgrown: false, clippings: false },
+    gardenAreaM2: null,
+  };
+
+  // ══════════════════════════════════════
+  // GETADDRESS.IO — UK Address Lookup
+  // Using geocoding fallback (swap key for getAddress.io in production)
+  // ══════════════════════════════════════
+  async function lookupPostcode() {
+    const pc = document.getElementById('postcode-input').value.trim().toUpperCase();
+    if (!pc) return;
+    const status = document.getElementById('addr-search-status');
+    status.textContent = 'Searching...';
+    status.style.color = 'var(--green-mid)';
+
+    try {
+      // Use postcodes.io (free) to validate and get coords, then Google to get addresses
+      const r = await fetch('https://api.postcodes.io/postcodes/' + encodeURIComponent(pc));
+      const d = await r.json();
+      if (d.status !== 200) {
+        status.textContent = 'Postcode not found. Please check and try again.';
+        status.style.color = 'var(--warn)'; return;
+      }
+      const lat = d.result.latitude;
+      const lng = d.result.longitude;
+
+      // Store postcode coords
+      bookData.lat = lat; bookData.lng = lng; bookData.postcode = pc;
+
+      // Build address list from Google geocoding (or use getAddress.io API key if you have one)
+      loadGoogleMaps(() => {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: pc + ', UK' }, (results, gs) => {
+          if (gs !== 'OK' || !results.length) {
+            status.textContent = 'Could not find addresses for this postcode.';
+            status.style.color = 'var(--warn)'; return;
+          }
+          // Show dropdown with found addresses
+          const sel = document.getElementById('addr-select');
+          sel.innerHTML = '<option value="">— Choose your address —</option>';
+          results.forEach((r, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = r.formatted_address;
+            opt.dataset.lat = r.geometry.location.lat();
+            opt.dataset.lng = r.geometry.location.lng();
+            opt.dataset.addr = r.formatted_address;
+            sel.appendChild(opt);
+          });
+          document.getElementById('addr-dropdown-wrap').style.display = 'block';
+          status.textContent = results.length + ' address' + (results.length > 1 ? 'es' : '') + ' found — please select yours below';
+          status.style.color = 'var(--green-mid)';
+        });
+      });
+    } catch(e) {
+      status.textContent = 'Error looking up postcode. Please try again.';
+      status.style.color = 'var(--warn)';
+    }
+  }
+
+  function selectFromDropdown(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    const lat = parseFloat(opt.dataset.lat);
+    const lng = parseFloat(opt.dataset.lng);
+    const addr = opt.dataset.addr;
+    bookData.lat = lat; bookData.lng = lng; bookData.address = addr;
+    document.getElementById('addr-confirmed-text').textContent = addr;
+    document.getElementById('addr-confirmed').style.display = 'block';
+    document.getElementById('addr-dropdown-wrap').style.display = 'none';
+    document.getElementById('addr-search-status').textContent = 'Address confirmed — click Continue to map your lawn';
+    document.getElementById('addr-search-status').style.color = 'var(--green-mid)';
+    document.getElementById('addr-street').value = addr;
+    document.getElementById('addr-postcode').value = bookData.postcode;
+    document.getElementById('addr-lat').value = lat;
+    document.getElementById('addr-lng').value = lng;
+  }
+
+  function showManualEntry() {
+    document.getElementById('addr-manual-wrap').style.display = 'block';
+    document.getElementById('addr-dropdown-wrap').style.display = 'none';
+  }
+
+  function confirmManualAddress() {
+    const street = document.getElementById('addr-manual-street').value.trim();
+    const town = document.getElementById('addr-manual-town').value.trim();
+    if (!street) return;
+    const addr = street + (town ? ', ' + town : '') + ', ' + bookData.postcode;
+    bookData.address = addr;
+    document.getElementById('addr-confirmed-text').textContent = addr;
+    document.getElementById('addr-confirmed').style.display = 'block';
+    document.getElementById('addr-manual-wrap').style.display = 'none';
+    document.getElementById('addr-street').value = addr;
+    document.getElementById('addr-search-status').textContent = 'Address confirmed — click Continue to map your lawn';
+    document.getElementById('addr-search-status').style.color = 'var(--green-mid)';
+    // Use postcode centre coords if we don't have exact
+  }
+
+  function resetAddress() {
+    document.getElementById('addr-confirmed').style.display = 'none';
+    document.getElementById('addr-dropdown-wrap').style.display = 'block';
+    bookData.lat = null; bookData.lng = null; bookData.address = '';
+  }
+
+  function lookupAddress() { lookupPostcode(); } // alias
+  function initAddressAutocomplete() {} // no-op
+
+  // ── HERO ADDRESS LOOKUP ────────────────────────────────
+  function heroLookup() {
+    const q = document.getElementById('hero-addr-input').value.trim();
+    const status = document.getElementById('hero-addr-status');
+    if (!q) return;
+    status.textContent = 'Searching...';
+    status.style.color = 'var(--green-mid)';
+    loadGoogleMaps(() => {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: q + ', UK' }, (results, gs) => {
+        if (gs !== 'OK' || !results[0]) {
+          status.textContent = 'Not found — try a postcode';
+          status.style.color = 'var(--warn)'; return;
+        }
+        const r = results[0];
+        bookData.lat = r.geometry.location.lat();
+        bookData.lng = r.geometry.location.lng();
+        bookData.address = r.formatted_address;
+        let pc = '';
+        r.address_components?.forEach(c => { if (c.types.includes('postal_code')) pc = c.long_name; });
+        bookData.postcode = pc;
+        status.textContent = 'Found: ' + r.formatted_address;
+        status.style.color = 'var(--green-mid)';
+      });
+    });
+  }
+
+  function heroStartBooking() {
+    showPage('book');
+    setTab(document.querySelectorAll('.nav-tab')[1]);
+    if (bookData.postcode) document.getElementById('postcode-input').value = bookData.postcode;
+  }
+
+  // ── EXTRAS TOGGLES ─────────────────────────────────────
+  function toggleExtra(key) {
+    bookData.extras[key] = !bookData.extras[key];
+    const toggle = document.getElementById('toggle-' + key);
+    const label = document.getElementById('extra-' + key + '-label');
+    if (bookData.extras[key]) {
+      toggle.style.background = 'var(--green-bright)';
+      toggle.firstElementChild.style.left = '22px';
+      label.style.borderColor = 'var(--green-bright)';
+      label.style.background = 'var(--green-pale)';
+    } else {
+      toggle.style.background = 'var(--border)';
+      toggle.firstElementChild.style.left = '2px';
+      label.style.borderColor = 'var(--border)';
+      label.style.background = 'white';
+    }
+    updateLivePrice();
+  }
+
+  function updateLivePrice() {
+    let base = bookData.price || 45;
+    let total = base;
+    if (bookData.extras.overgrown) total = Math.round(total * 1.5);
+    if (bookData.extras.clippings) total += 10;
+    const el = document.getElementById('price-live-amount');
+    if (el) el.textContent = '£' + total;
+    bookData.totalPrice = total;
+  }
+
+  // ── STEP NAV ───────────────────────────────────────────
+  function goToStepTwo() {
+    if (!bookData.lat || !bookData.lng) {
+      const s = document.getElementById('addr-search-status');
+      if (s) { s.textContent = 'Please find and select your address first.'; s.style.color = 'var(--warn)'; }
+      return;
+    }
+    bookNextStep(2);
+    const banner = document.getElementById('step2-addr-display');
+    if (banner) banner.textContent = bookData.address;
+    const hint = document.getElementById('step2-map-hint');
+    if (hint) hint.style.display = 'none';
+    const wrap = document.getElementById('lawn-sizer-wrap');
+    if (wrap) wrap.style.display = 'block';
+    // Delay to ensure DOM is fully rendered and visible before map init
+    lawnMap = null;
+    setTimeout(() => initLawnSizer(bookData.lat, bookData.lng), 500);
+  }
+
+  // ── CONFIRM BOOKING ────────────────────────────────────
+  function confirmBooking() {
+    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.progress-step').forEach(p => p.classList.add('done'));
+    document.getElementById('step-success').classList.add('active');
+    document.getElementById('booking-ref').textContent = 'NG-' + Math.floor(1000 + Math.random() * 9000);
+    window.scrollTo(0, 0);
+    // TODO: POST to /api/bookings with full bookData
+  }
+
+  // ── BOOK NEXT STEP ─────────────────────────────────────
+  function bookNextStep(n) {
+    document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+    const visualStep = Math.min(n, 3);
+    document.querySelectorAll('.progress-step').forEach((p, i) => {
+      p.classList.remove('active', 'done');
+      if (i + 1 < visualStep) p.classList.add('done');
+      else if (i + 1 === visualStep) p.classList.add('active');
+    });
+    ['step-label-1','step-label-2','step-label-3'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.color = (i + 1 === visualStep) ? 'var(--green-mid)' : 'var(--ink-light)';
+      el.style.fontWeight = (i + 1 === visualStep) ? '600' : '400';
+    });
+    const el = document.getElementById('step-' + n);
+    if (el) el.classList.add('active');
+    if (n === 3) {
+      buildDateGrid();
+      const sizeLabels = {small:'Small garden',medium:'Medium garden',large:'Large garden',xl:'XL garden'};
+      const s2size = document.getElementById('s2-size-label');
+      const s2price = document.getElementById('s2-price-label');
+      if (s2size) s2size.textContent = sizeLabels[bookData.size] || 'Your garden';
+      if (s2price) s2price.textContent = '£' + bookData.price;
+      updateLivePrice();
+      // Show weather notice always — builds trust
+      const wn = document.getElementById('weather-notice');
+      if (wn) wn.style.display = 'block';
+    }
+    if (n === 4) {
+      const sizeLabels = {small:'Small garden cut',medium:'Medium garden cut',large:'Large garden cut',xl:'XL garden cut'};
+      const total = bookData.totalPrice || bookData.price || 45;
+      const extras = [];
+      if (bookData.extras.overgrown) extras.push('Overgrown surcharge');
+      if (bookData.extras.clippings) extras.push('Clippings removal');
+      const confSize = document.getElementById('conf-size');
+      if (confSize) confSize.textContent = (sizeLabels[bookData.size] || 'Garden cut') + (extras.length ? ' + ' + extras.join(', ') : '');
+      const confArea = document.getElementById('conf-area');
+      if (confArea) confArea.textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
+      const confFreq = document.getElementById('conf-freq');
+      if (confFreq) confFreq.textContent = bookData.freq === 'ONE_OFF' ? 'One-off' : bookData.freq === 'FORTNIGHTLY' ? 'Fortnightly' : 'Monthly';
+      const confDt = document.getElementById('conf-dt');
+      if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
+      const addrEl = document.getElementById('conf-addr');
+      if (addrEl) {
+        addrEl.innerHTML = bookData.address || 'Your address';
+        if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
+      }
+      const notesEl = document.getElementById('conf-notes-row');
+      const notes = document.getElementById('addr-notes')?.value;
+      if (notesEl) notesEl.style.display = notes ? 'flex' : 'none';
+      const notesVal = document.getElementById('conf-notes');
+      if (notesVal && notes) notesVal.textContent = notes;
+      const confPrice = document.getElementById('conf-price');
+      if (confPrice) confPrice.textContent = '£' + total;
+    }
+    window.scrollTo(0, 0);
+  }
+
+  // ── HERO PANEL FUNCTIONS ─────────────────────────────
 
   // ══════════════════════════════════════
   // GOOGLE MAPS — shared state
