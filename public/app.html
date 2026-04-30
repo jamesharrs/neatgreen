@@ -2569,22 +2569,6 @@
   // fullRouteMap declared above
   // routeMarkers declared above
 
-  function loadGoogleMaps(callback) {
-    if (gmapsLoaded) { callback(); return; }
-    if (window._gmapsLoading) { window._gmapsQueue = window._gmapsQueue || []; window._gmapsQueue.push(callback); return; }
-    window._gmapsLoading = true;
-    window._gmapsQueue = [callback];
-
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GMAPS_KEY}&libraries=drawing,geometry,places&loading=async&callback=onGmapsReady&v=beta`;
-    script.async = true;
-    window.onGmapsReady = () => {
-      gmapsLoaded = true;
-      window._gmapsLoading = false;
-      (window._gmapsQueue || []).forEach(fn => fn());
-      window._gmapsQueue = [];
-    };
-    document.head.appendChild(script);
-  }
 
   // ── FULL ROUTE MAP (maps page) ────────────────────────────
   function initFullRouteMap() {
