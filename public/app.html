@@ -1236,30 +1236,61 @@
       </div>
 
       <div id="lawn-sizer-wrap" style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <label class="form-label" style="margin:0">Draw around your lawn to measure it</label>
-          <button onclick="resetLawnPolygon()" style="background:transparent;border:1px solid var(--border);
-            padding:4px 12px;border-radius:99px;font-size:12px;cursor:pointer;color:var(--ink-light)">Redraw</button>
-        </div>
-        <div id="lawn-map" style="width:100%;height:360px;border-radius:12px;
-          border:2px solid var(--border);overflow:hidden;background:#eaf2eb;"></div>
-        <div id="lawn-result" style="display:none;margin-top:12px;padding:14px;
-          background:var(--green-pale);border-radius:10px;border:1px solid var(--green-bright);">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-weight:700;color:var(--green-deep);font-size:16px" id="lawn-area-text">~65m²</div>
-              <div style="font-size:13px;color:var(--ink-light)" id="lawn-size-text">Medium garden</div>
+        <!-- Tips panel -->
+        <div style="background:var(--green-pale);border-radius:10px;padding:14px 16px;
+          margin-bottom:12px;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-weight:700;font-size:13px;color:var(--green-deep)">How to map your lawn</div>
+            <button onclick="resetLawnPolygon()" style="background:white;border:1.5px solid var(--border);
+              padding:5px 14px;border-radius:99px;font-size:12px;cursor:pointer;color:var(--ink-light);
+              font-weight:600;transition:all 0.2s"
+              onmouseover="this.style.borderColor='var(--warn)';this.style.color='var(--warn)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink-light)'">
+              ↺ Redraw
+            </button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--ink-light)">
+              <span style="background:var(--green-mid);color:white;border-radius:50%;width:18px;height:18px;
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:11px">1</span>
+              <span>Click each corner of your lawn to place points</span>
             </div>
-            <div style="text-align:right">
-              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;color:var(--green-mid)" id="lawn-price-text">£45</div>
-              <div style="font-size:12px;color:var(--ink-light)">per cut</div>
+            <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--ink-light)">
+              <span style="background:var(--green-mid);color:white;border-radius:50%;width:18px;height:18px;
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:11px">2</span>
+              <span>Double-click the last point to close the shape</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--ink-light)">
+              <span style="background:var(--green-mid);color:white;border-radius:50%;width:18px;height:18px;
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:11px">3</span>
+              <span>Drag the green dots to fine-tune the boundary</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--ink-light)">
+              <span style="background:var(--green-mid);color:white;border-radius:50%;width:18px;height:18px;
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:11px">4</span>
+              <span>Price updates instantly as you adjust</span>
             </div>
           </div>
         </div>
-        <div id="lawn-draw-hint" style="margin-top:10px;padding:10px 14px;background:#fff8e1;
-          border-radius:8px;font-size:13px;color:#7a5c00;border:1px solid #ffe082;">
-          Click points around your lawn boundary — double-click to finish. You can drag corners to adjust.
+        <div id="lawn-map" style="width:100%;height:420px;border-radius:12px;
+          border:2px solid var(--border);overflow:hidden;background:#eaf2eb;"></div>
+        <div id="lawn-result" style="display:none;margin-top:14px;padding:18px 20px;
+          background:var(--green-pale);border-radius:12px;border:2px solid var(--green-bright);
+          box-shadow:0 2px 12px rgba(45,186,96,0.15)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;color:var(--ink-light);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Your lawn</div>
+              <div style="font-weight:800;color:var(--green-deep);font-size:20px;font-family:'Plus Jakarta Sans',sans-serif" id="lawn-area-text">~65m²</div>
+              <div style="font-size:14px;color:var(--ink-light);margin-top:2px" id="lawn-size-text">Medium garden</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;color:var(--ink-light);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Price per cut</div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:42px;font-weight:800;color:var(--green-mid);line-height:1" id="lawn-price-text">£45</div>
+              <div style="font-size:12px;color:var(--ink-light);margin-top:4px">Adjust shape to refine</div>
+            </div>
+          </div>
         </div>
+        <div id="lawn-draw-hint" style="margin-top:10px;padding:10px 14px;background:#fff8e1;border-radius:8px;font-size:13px;color:#7a5c00;border:1px solid #ffe082;text-align:center;font-weight:500"></div>
       </div>
       <div style="margin-top:16px;font-size:13px;color:var(--ink-light)" id="step2-map-hint">Loading your property on the map...</div>
 
