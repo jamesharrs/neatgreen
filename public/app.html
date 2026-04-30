@@ -2261,20 +2261,21 @@
 
   function goToStepTwo() {
     bookNextStep(2);
-    // Update address banner
     const banner = document.getElementById('step2-addr-display');
     if (banner) banner.textContent = bookData.address || '—';
     const hint = document.getElementById('step2-map-hint');
-    // Auto-load map if we have coords
-    if (bookData.lat && bookData.lng) {
-      if (hint) hint.style.display = 'none';
-      setTimeout(() => {
-        document.getElementById('lawn-sizer-wrap').style.display = 'block';
-        initLawnSizer(bookData.lat, bookData.lng);
-      }, 150);
-    } else {
-      if (hint) hint.textContent = 'Please go back and enter your address first.';
+    if (!bookData.lat || !bookData.lng) {
+      if (hint) hint.textContent = 'Please go back and find your address first.';
+      return;
     }
+    if (hint) hint.style.display = 'none';
+    const wrap = document.getElementById('lawn-sizer-wrap');
+    if (wrap) wrap.style.display = 'block';
+    // Use longer delay to ensure step-2 is visible and map div has dimensions
+    setTimeout(() => {
+      lawnMap = null; // force reinit
+      initLawnSizer(bookData.lat, bookData.lng);
+    }, 400);
   }
 
   function bookNextStep(n) {
