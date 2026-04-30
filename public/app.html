@@ -2416,51 +2416,59 @@
   }
 
   // ── ADDRESS LOOKUP (postcodes.io) ────────────────────
+  const GETADDRESS_KEY = 'RBzop_3TQkm7iIlsG9nqLQ51768';
+
   async function lookupPostcode() {
-    const pc = document.getElementById('postcode-input').value.trim().toUpperCase();
+    const pc = document.getElementById('postcode-input').value.trim().toUpperCase().replace(/\s+/g, '');
     if (!pc) return;
     const status = document.getElementById('addr-search-status');
     status.textContent = 'Searching...';
     status.style.color = 'var(--green-mid)';
+    document.getElementById('addr-dropdown-wrap').style.display = 'none';
+    document.getElementById('addr-confirmed').style.display = 'none';
+    document.getElementById('addr-manual-wrap').style.display = 'none';
     try {
-      const res = await fetch('https://api.postcodes.io/postcodes/' + encodeURIComponent(pc));
-      const data = await res.json();
-      if (data.status !== 200) {
-        status.textContent = 'Postcode not found. Please check and try again.';
-        status.style.color = 'var(--warn)'; return;
+      const r = await fetch(
+        `https://api.getaddress.io/find/${encodeURIComponent(pc)}?api-key=${GETADDRESS_KEY}&expand=true`
+      );
+      if (!r.ok) {
+        status.textContent = r.status === 404
+          ? 'Postcode not found. Please check and try again.'
+          : 'Could not find addresses. Try entering manually.';
+        status.style.color = 'var(--warn)';
+        document.getElementById('addr-manual-wrap').style.display = 'block';
+        return;
       }
-      bookData.lat = data.result.latitude;
-      bookData.lng = data.result.longitude;
-      bookData.postcode = pc;
-      // Now geocode to get address options
-      loadGoogleMaps(() => {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: pc + ', UK' }, (results, gs) => {
-          if (gs !== 'OK' || !results.length) {
-            status.textContent = 'Could not find addresses. Try entering manually below.';
-            status.style.color = 'var(--warn)';
-            showManualEntry(); return;
-          }
-          const sel = document.getElementById('addr-select');
-          sel.innerHTML = '<option value="">— Choose your address —</option>';
-          results.forEach((r, i) => {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = r.formatted_address;
-            opt.dataset.lat = r.geometry.location.lat();
-            opt.dataset.lng = r.geometry.location.lng();
-            opt.dataset.addr = r.formatted_address;
-            sel.appendChild(opt);
-          });
-          document.getElementById('addr-dropdown-wrap').style.display = 'block';
-          status.textContent = results.length + ' address' + (results.length > 1 ? 'es' : '') + ' found';
-          status.style.color = 'var(--green-mid)';
-        });
+      const d = await r.json();
+      const lat = d.latitude; const lng = d.longitude;
+      const addresses = d.addresses || [];
+      bookData.lat = lat; bookData.lng = lng; bookData.postcode = pc;
+      if (!addresses.length) {
+        status.textContent = 'No addresses found. Please enter manually.';
+        status.style.color = 'var(--warn)';
+        document.getElementById('addr-manual-wrap').style.display = 'block';
+        return;
+      }
+      const sel = document.getElementById('addr-select');
+      sel.innerHTML = '<option value="">— Choose your address —</option>';
+      addresses.forEach((a, i) => {
+        const parts = [a.line_1, a.line_2, a.line_3, a.locality, a.town_or_city]
+          .filter(p => p && p.trim());
+        const label = parts.join(', ') + ', ' + pc;
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = label;
+        opt.dataset.lat = lat; opt.dataset.lng = lng; opt.dataset.addr = label;
+        sel.appendChild(opt);
       });
+      document.getElementById('addr-dropdown-wrap').style.display = 'block';
+      status.textContent = addresses.length + ' address' + (addresses.length !== 1 ? 'es' : '') + ' found';
+      status.style.color = 'var(--green-mid)';
     } catch(e) {
-      status.textContent = 'Error — please try again or enter manually.';
+      console.error(e);
+      status.textContent = 'Error looking up postcode. Please enter manually.';
       status.style.color = 'var(--warn)';
-      showManualEntry();
+      document.getElementById('addr-manual-wrap').style.display = 'block';
     }
   }
 
