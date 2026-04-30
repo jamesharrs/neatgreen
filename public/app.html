@@ -3007,108 +3007,90 @@
     const el = document.getElementById('lawn-map');
     if (!el) return;
 
-    // Clean up previous state
+    // Clean up previous polygon
     if (lawnPolygon) { lawnPolygon.setMap(null); lawnPolygon = null; }
-    if (lawnDrawingManager) { lawnDrawingManager.setMap(null); lawnDrawingManager = null; }
 
-    // Only create the map once — reuse it on redraw
+    // Create map once, reuse on redraw
     if (!lawnMap) {
       lawnMap = new google.maps.Map(el, {
         center: { lat, lng }, zoom: 19,
         mapTypeId: 'satellite', tilt: 0,
-        disableDefaultUI: true, zoomControl: true,
-        gestureHandling: 'greedy',
+        disableDefaultUI: false,
+        zoomControl: true,
+        scrollwheel: true,
+        gestureHandling: 'cooperative',
         mapId: 'DEMO_MAP_ID',
       });
     } else {
       lawnMap.setCenter({ lat, lng });
-      // Remove old listeners
       google.maps.event.clearListeners(lawnMap, 'click');
       google.maps.event.clearListeners(lawnMap, 'dblclick');
     }
 
-    let vertices = [];
-    let previewMarkers = [];
-    let previewPolyline = null;
+    const hint = document.getElementById('lawn-draw-hint');
+    const result = document.getElementById('lawn-result');
+    if (hint) { hint.style.display = 'block'; hint.textContent = 'Click points around your lawn — double-click on last point to finish'; }
+    if (result) result.style.display = 'none';
 
-    function removePreview() {
-      if (previewPolyline) { previewPolyline.setMap(null); previewPolyline = null; }
-      previewMarkers.forEach(m => { m.map = null; });
-      previewMarkers = [];
+    let vertices = [];
+    let tempMarkers = [];
+    let tempLine = null;
+
+    function cleanup() {
+      tempMarkers.forEach(m => m.map = null);
+      tempMarkers = [];
+      if (tempLine) { tempLine.setMap(null); tempLine = null; }
     }
 
-    function drawPreview() {
-      if (previewPolyline) previewPolyline.setMap(null);
+    function updateLine() {
+      if (tempLine) tempLine.setMap(null);
       if (vertices.length < 2) return;
-      previewPolyline = new google.maps.Polyline({
+      tempLine = new google.maps.Polyline({
         path: [...vertices, vertices[0]],
-        strokeColor: '#2dba60', strokeWeight: 2.5,
-        strokeOpacity: 0.8, map: lawnMap,
+        strokeColor: '#2dba60', strokeWeight: 2, strokeOpacity: 0.7, map: lawnMap,
       });
     }
 
-    function finishPolygon() {
+    function finish() {
       if (vertices.length < 3) return;
-      removePreview();
-
-      // Remove click/dblclick listeners so polygon edit handles work freely
+      cleanup();
       google.maps.event.clearListeners(lawnMap, 'click');
       google.maps.event.clearListeners(lawnMap, 'dblclick');
 
       lawnPolygon = new google.maps.Polygon({
         paths: vertices,
-        fillColor: '#2dba60', fillOpacity: 0.3,
-        strokeColor: '#2dba60', strokeWeight: 2.5,
-        editable: true, draggable: false, map: lawnMap,
+        fillColor: '#2dba60', fillOpacity: 0.25,
+        strokeColor: '#2dba60', strokeWeight: 2,
+        editable: true,
+        map: lawnMap,
       });
 
-      document.getElementById('lawn-draw-hint').style.display = 'none';
-      document.getElementById('lawn-result').style.display = 'block';
+      if (hint) hint.style.display = 'none';
       updateLawnArea(lawnPolygon);
 
-      // Update price when user drags nodes
-      google.maps.event.addListener(lawnPolygon.getPath(), 'set_at', () => updateLawnArea(lawnPolygon));
-      google.maps.event.addListener(lawnPolygon.getPath(), 'insert_at', () => updateLawnArea(lawnPolygon));
-      google.maps.event.addListener(lawnPolygon.getPath(), 'remove_at', () => updateLawnArea(lawnPolygon));
+      const path = lawnPolygon.getPath();
+      google.maps.event.addListener(path, 'set_at',    () => updateLawnArea(lawnPolygon));
+      google.maps.event.addListener(path, 'insert_at', () => updateLawnArea(lawnPolygon));
+      google.maps.event.addListener(path, 'remove_at', () => updateLawnArea(lawnPolygon));
     }
 
-    // Click to place vertices
-    lawnMap.addListener('click', (e) => {
+    lawnMap.addListener('click', e => {
       if (lawnPolygon) return;
       vertices.push(e.latLng);
-
-      // Small dot marker at each vertex
+      // Small dot
       const dot = document.createElement('div');
-      dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:white;border:2.5px solid #2dba60;box-shadow:0 1px 4px rgba(0,0,0,0.4);cursor:crosshair';
-      const m = new google.maps.marker.AdvancedMarkerElement({
-        position: e.latLng, map: lawnMap, content: dot,
-      });
-      previewMarkers.push(m);
-      drawPreview();
-
-      // Show hint after first click
-      if (vertices.length === 1) {
-        const hint = document.getElementById('lawn-draw-hint');
-        if (hint) hint.textContent = `${vertices.length} point added — keep clicking, double-click to finish`;
-      } else {
-        const hint = document.getElementById('lawn-draw-hint');
-        if (hint) hint.textContent = `${vertices.length} points — double-click to finish, or keep adding`;
-      }
+      dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:#2dba60;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.5)';
+      tempMarkers.push(new google.maps.marker.AdvancedMarkerElement({ position: e.latLng, map: lawnMap, content: dot }));
+      updateLine();
+      if (hint) hint.textContent = vertices.length + ' point' + (vertices.length > 1 ? 's' : '') + ' — double-click to finish';
     });
 
-    // Double-click to finish
-    lawnMap.addListener('dblclick', (e) => {
+    lawnMap.addListener('dblclick', e => {
       if (lawnPolygon) return;
-      e.stop();
-      finishPolygon();
+      // Remove the extra point added by the preceding click event
+      if (vertices.length > 0) { vertices.pop(); if (tempMarkers.length > 0) { tempMarkers[tempMarkers.length-1].map = null; tempMarkers.pop(); } }
+      finish();
     });
-
-    const hint = document.getElementById('lawn-draw-hint');
-    if (hint) {
-      hint.style.display = 'block';
-      hint.textContent = 'Click points around your lawn boundary — double-click to finish';
-    }
-    document.getElementById('lawn-result').style.display = 'none';
   }
 
   function updateLawnArea(poly) {
