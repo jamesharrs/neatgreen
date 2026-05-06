@@ -221,7 +221,7 @@ async function main() {
             crewId: crew.id,
             routeId: route.id,
             routeOrder: s.order,
-            startedAt: [BookingStatus.COMPLETED, BookingStatus.IN_PROGRESS].includes(s.status)
+            startedAt: (s.status === BookingStatus.COMPLETED || s.status === BookingStatus.IN_PROGRESS)
               ? new Date(scheduledDate.getTime() + 5 * 60000) : null,
             completedAt: s.status === BookingStatus.COMPLETED
               ? new Date(scheduledDate.getTime() + 40 * 60000) : null,
