@@ -248,7 +248,7 @@ async function main() {
         reference: ref,
         customerId: customer.id,
         scheduledDate: futureDate,
-        scheduledTime: undefined,
+        scheduledTime: undefined as any,
         gardenSize: customer.gardenSize,
         frequency: customer.frequency,
         priceInPence: customer.pricePerCut,

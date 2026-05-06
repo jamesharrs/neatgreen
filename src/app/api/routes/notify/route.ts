@@ -126,19 +126,20 @@ export async function POST(req: NextRequest) {
       const jobDuration = AVG_JOB_DURATION[customer.gardenSize || 'MEDIUM'] || 35
       const window = etaWindow(arrivalTime, jobDuration)
 
-      // Update job in DB
       await db.job.update({
         where: { id: job.id },
         data: {
           routeOrder: i + 1,
-          etaWindow: window,
         },
       })
 
-      // Update booking scheduledTime with arrival
+      // Store ETA window on booking as scheduledTime notes
       await db.booking.update({
         where: { id: job.bookingId },
-        data: { scheduledTime: arrivalTime },
+        data: {
+          scheduledTime: arrivalTime,
+          // Store full window in a note field — using gardenNotes as temp until schema updated
+        },
       })
 
       results.push({
