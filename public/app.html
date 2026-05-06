@@ -2538,11 +2538,11 @@
   let routeMarkers = [], routePolyline = null;
 
   const STOP_DATA = [
-    { name:'Sarah Johnson',  addr:'14 Oak Avenue, London SW4',  lat:51.4589, lng:-0.1294, price:'£45', time:'8:00 AM',  status:'done'    },
-    { name:'Mike Kowalski',  addr:'7 Elm Close, London SW2',    lat:51.4612, lng:-0.1178, price:'£60', time:'9:30 AM',  status:'current' },
-    { name:'Rachel Pierce',  addr:'3 Birch Road, London SW4',   lat:51.4601, lng:-0.1332, price:'£35', time:'11:00 AM', status:'next'    },
-    { name:'David Williams', addr:'22 Pine Street, London SW3', lat:51.4556, lng:-0.1244, price:'£45', time:'1:00 PM',  status:'later'   },
-    { name:'Anna Lawson',    addr:'9 Cedar Lane, London SW5',   lat:51.4578, lng:-0.1389, price:'£60', time:'2:30 PM',  status:'later'   },
+    { name:'Tom Westcott',     addr:'4 Crediton Road, Okehampton EX20 1LB',    lat:50.7392, lng:-3.9981, price:'£45', time:'8:00 AM',  status:'done'    },
+    { name:'Mike Radford',     addr:'2 Church Lane, North Tawton EX20 2ED',    lat:50.7959, lng:-3.9071, price:'£35', time:'9:00 AM',  status:'done'    },
+    { name:'Emma Trevithick',  addr:'Dartmoor View, Spreyton EX17 5AN',        lat:50.7893, lng:-3.8812, price:'£75', time:'10:30 AM', status:'current' },
+    { name:'James Arundell',   addr:'8 Station Road, Sampford Courtenay EX20', lat:50.7701, lng:-3.9538, price:'£45', time:'12:00 PM', status:'next'    },
+    { name:'Paul Heard',       addr:'3 West Street, Okehampton EX20 1HQ',      lat:50.7378, lng:-4.0012, price:'£35', time:'1:30 PM',  status:'later'   },
   ];
 
   function loadGoogleMaps(callback) {
@@ -4358,22 +4358,43 @@
     });
   }
 
-  function terrConfirmAdd() {
-    const name=document.getElementById('tm-name')?.value.trim();
-    const depotName=document.getElementById('tm-depot')?.value.trim()||'Depot';
-    const lng=parseFloat(document.getElementById('tm-lng')?.value||'-3.9936');
-    const lat=parseFloat(document.getElementById('tm-lat')?.value||'50.7397');
-    if(!name) { alert('Please enter a territory name'); return; }
-    const polygon=terrIsochrone(lng, lat, terrModalForm.travelTime);
-    territories.push({
+  async function terrConfirmAdd() {
+    const name = document.getElementById('tm-name')?.value.trim();
+    const depotName = document.getElementById('tm-depot')?.value.trim() || 'Depot';
+    const lngInput = document.getElementById('tm-lng')?.value;
+    const latInput = document.getElementById('tm-lat')?.value;
+    const btn = document.querySelector('#terr-modal button[onclick="terrConfirmAdd()"]');
+
+    if (!name) { alert('Please enter a territory name'); return; }
+
+    let lng = parseFloat(lngInput || '-3.9936');
+    let lat = parseFloat(latInput || '50.7397');
+
+    if (btn) { btn.textContent = 'Generating...'; btn.disabled = true; }
+
+    // If depot name looks like a postcode, geocode it
+    const rawPc = depotName.toUpperCase().replace(/\s+/g,'');
+    if (/^[A-Z]{1,2}[0-9]/.test(rawPc)) {
+      try {
+        const pc = rawPc.length > 3 ? rawPc.slice(0,-3)+' '+rawPc.slice(-3) : rawPc;
+        const r = await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(pc));
+        const d = await r.json();
+        if (d.status === 200) { lng = d.result.longitude; lat = d.result.latitude; }
+      } catch(e) {}
+    }
+
+    const polygon = terrIsochrone(lng, lat, terrModalForm.travelTime);
+    const newTerritory = {
       id: Date.now(),
-      name, depot:{name:depotName,lng,lat},
-      travelTime:terrModalForm.travelTime,
-      status:terrModalForm.status,
-      polygon, waitlist:0,
-      createdAt:new Date().toISOString(),
-    });
-    terrSelectedId=territories[territories.length-1].id;
+      name, depot: { name: depotName, lng, lat },
+      travelTime: terrModalForm.travelTime,
+      status: terrModalForm.status,
+      polygon, waitlist: 0,
+      createdAt: new Date().toISOString(),
+    };
+    territories.push(newTerritory);
+    terrSelectedId = newTerritory.id;
+    terrGMap = null; // force map reinit so bounds update
     document.getElementById('terr-modal')?.remove();
     terrRender();
   }
