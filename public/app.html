@@ -1721,9 +1721,8 @@
                 Coverage Map — Devon & Cornwall
               </div>
               <div style="position:relative">
-                <canvas id="terr-map-canvas" width="520" height="340"
-                  onclick="terrMapClick(event)"
-                  style="width:100%;border-radius:10px;cursor:crosshair;border:1px solid var(--border);display:block"></canvas>
+                <div id="terr-gmap" style="width:100%;height:360px;border-radius:10px;
+                  border:1px solid var(--border);overflow:hidden;background:#e8f0e8"></div>
                 <div style="position:absolute;bottom:8px;left:8px;background:rgba(255,255,255,0.9);
                   border-radius:6px;padding:4px 10px;font-size:11px;color:var(--ink-light)">
                   Click to test a location
@@ -3998,77 +3997,121 @@
     return inside;
   }
 
-  function terrProject(lng, lat, w, h) {
-    const b = {minLng:-5.5, maxLng:-2.8, minLat:50.1, maxLat:51.3};
-    return [
-      ((lng-b.minLng)/(b.maxLng-b.minLng))*w,
-      ((b.maxLat-lat)/(b.maxLat-b.minLat))*h
-    ];
-  }
-  function terrUnproject(x, y, w, h) {
-    const b = {minLng:-5.5, maxLng:-2.8, minLat:50.1, maxLat:51.3};
-    return [
-      (x/w)*(b.maxLng-b.minLng)+b.minLng,
-      b.maxLat-(y/h)*(b.maxLat-b.minLat)
-    ];
-  }
+  // terrProject/terrUnproject removed — using Google Maps
+
+  let terrGMap = null;
+  let terrGPolygons = [];
+  let terrGMarkers = [];
+  let terrGTestMarker = null;
 
   function terrDrawMap() {
-    const canvas = document.getElementById('terr-map-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width, h = canvas.height;
+    const el = document.getElementById('terr-gmap');
+    if (!el) return;
 
-    // Background
-    ctx.fillStyle = '#e8f0e8'; ctx.fillRect(0,0,w,h);
+    loadGoogleMaps(() => {
+      // Init map once, centred on Devon
+      if (!terrGMap) {
+        terrGMap = new google.maps.Map(el, {
+          center: { lat: 50.85, lng: -3.9 },
+          zoom: 9,
+          mapTypeId: 'hybrid',
+          mapId: 'DEMO_MAP_ID',
+          disableDefaultUI: false,
+          zoomControl: true,
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: true,
+        });
 
-    // Grid
-    ctx.strokeStyle='#d1e0d1'; ctx.lineWidth=0.5;
-    for (let lng=-5.5; lng<=-2.8; lng+=0.5) {
-      const [x]=terrProject(lng,50,w,h);
-      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
-    }
-    for (let lat=50.1; lat<=51.3; lat+=0.3) {
-      const [,y]=terrProject(-4,lat,w,h);
-      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
-    }
+        // Click to test location
+        terrGMap.addListener('click', e => {
+          const lng = e.latLng.lng(), lat = e.latLng.lat();
+          let found = null;
+          for (const t of territories) {
+            if (t.polygon && terrPointInPoly([lng, lat], t.polygon)) { found = t; break; }
+          }
+          terrHighlightPoint = [lng, lat];
+          terrHighlightResult = !!found;
 
-    // Dartmoor
-    ctx.fillStyle='#c8d8c0';
-    const moor=[[-4.1,50.65],[-3.85,50.62],[-3.7,50.58],[-3.75,50.48],[-4.05,50.45],[-4.2,50.52],[-4.15,50.62]];
-    ctx.beginPath();
-    moor.forEach(([lng,lat],i)=>{ const [x,y]=terrProject(lng,lat,w,h); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
-    ctx.closePath(); ctx.fill();
+          // Show/move test marker
+          if (terrGTestMarker) terrGTestMarker.map = null;
+          const dot = document.createElement('div');
+          dot.style.cssText = 'width:14px;height:14px;border-radius:50%;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);background:' + (found ? '#22c55e' : '#ef4444');
+          terrGTestMarker = new google.maps.marker.AdvancedMarkerElement({
+            position: { lat, lng }, map: terrGMap, content: dot,
+          });
 
-    // Territories
-    territories.forEach(t => {
-      if (!t.polygon) return;
-      const isHL = t.id===terrSelectedId;
-      const col = TERR_STATUS[t.status]?.color||'#666';
-      ctx.beginPath();
-      t.polygon.forEach(([lng,lat],i)=>{ const[x,y]=terrProject(lng,lat,w,h); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
-      ctx.closePath();
-      ctx.globalAlpha=isHL?0.35:0.18; ctx.fillStyle=col; ctx.fill();
-      ctx.globalAlpha=1; ctx.strokeStyle=col; ctx.lineWidth=isHL?2.5:1.5;
-      ctx.setLineDash(t.status==='coming_soon'?[6,3]:[]); ctx.stroke(); ctx.setLineDash([]);
-      const[cx,cy]=terrProject(t.depot.lng,t.depot.lat,w,h);
-      ctx.fillStyle='#1a2e1a'; ctx.font=(isHL?'bold ':'')+'11px system-ui';
-      ctx.textAlign='center'; ctx.fillText(t.name,cx,cy-14);
-    });
+          const res = document.getElementById('terr-map-result');
+          if (res) {
+            res.style.display = 'block';
+            res.style.background = found ? '#f0fdf4' : '#fef2f2';
+            res.style.color = found ? '#16a34a' : '#dc2626';
+            res.style.border = '1px solid ' + (found ? '#bbf7d0' : '#fecaca');
+            res.textContent = found ? 'In service area' : 'Outside coverage';
+          }
+          const info = document.getElementById('terr-click-info');
+          if (info) info.textContent = lat.toFixed(4) + '°N, ' + lng.toFixed(4) + '°E' + (found ? ' → ' + found.name : ' → No coverage');
+        });
+      }
 
-    // Test point
-    if (terrHighlightPoint) {
-      const[px,py]=terrProject(terrHighlightPoint[0],terrHighlightPoint[1],w,h);
-      ctx.beginPath(); ctx.arc(px,py,7,0,Math.PI*2);
-      ctx.fillStyle=terrHighlightResult?'#22c55e':'#ef4444'; ctx.fill();
-      ctx.strokeStyle='white'; ctx.lineWidth=2; ctx.stroke();
-    }
+      // Clear old polygons and markers
+      terrGPolygons.forEach(p => p.setMap(null));
+      terrGPolygons = [];
+      terrGMarkers.forEach(m => { m.map = null; });
+      terrGMarkers = [];
 
-    // Depot dots
-    territories.forEach(t=>{
-      const[x,y]=terrProject(t.depot.lng,t.depot.lat,w,h);
-      ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fillStyle='#1a2e1a'; ctx.fill();
-      ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fillStyle='#7cba4a'; ctx.fill();
+      // Draw each territory
+      territories.forEach(t => {
+        if (!t.polygon) return;
+        const isHL = t.id === terrSelectedId;
+        const col = TERR_STATUS[t.status]?.color || '#22c55e';
+
+        const path = t.polygon.map(([lng, lat]) => ({ lat, lng }));
+        const poly = new google.maps.Polygon({
+          paths: path,
+          fillColor: col,
+          fillOpacity: isHL ? 0.3 : 0.15,
+          strokeColor: col,
+          strokeWeight: isHL ? 2.5 : 1.5,
+          strokeOpacity: 0.9,
+          map: terrGMap,
+        });
+        poly.addListener('click', e => {
+          let found = null;
+          for (const tr of territories) {
+            if (tr.polygon && terrPointInPoly([e.latLng.lng(), e.latLng.lat()], tr.polygon)) { found = tr; break; }
+          }
+          const res = document.getElementById('terr-map-result');
+          if (res) {
+            res.style.display = 'block';
+            res.style.background = '#f0fdf4';
+            res.style.color = '#16a34a';
+            res.style.border = '1px solid #bbf7d0';
+            res.textContent = found ? 'In service area' : 'In coverage';
+          }
+        });
+        terrGPolygons.push(poly);
+
+        // Depot marker with label
+        const depotPin = document.createElement('div');
+        depotPin.style.cssText = 'background:' + (isHL ? '#1a2e1a' : 'rgba(26,46,26,0.85)') + ';color:white;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid ' + col;
+        depotPin.textContent = t.name;
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+          position: { lat: t.depot.lat, lng: t.depot.lng },
+          map: terrGMap,
+          content: depotPin,
+        });
+        terrGMarkers.push(marker);
+      });
+
+      // Auto-fit bounds to show all territories
+      if (territories.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        territories.forEach(t => {
+          t.polygon?.forEach(([lng, lat]) => bounds.extend({ lat, lng }));
+        });
+        terrGMap.fitBounds(bounds, 40);
+      }
     });
   }
 
@@ -4184,30 +4227,7 @@
     terrRender();
   }
 
-  function terrMapClick(e) {
-    const canvas = document.getElementById('terr-map-canvas');
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    const [lng,lat] = terrUnproject(x, y, canvas.width, canvas.height);
-    let found = null;
-    for (const t of territories) {
-      if (t.polygon && terrPointInPoly([lng,lat], t.polygon)) { found=t; break; }
-    }
-    terrHighlightPoint=[lng,lat];
-    terrHighlightResult=!!found;
-    terrDrawMap();
-    const res=document.getElementById('terr-map-result');
-    if(res) {
-      res.style.display='block';
-      res.style.background=found?'#f0fdf4':'#fef2f2';
-      res.style.color=found?'#16a34a':'#dc2626';
-      res.style.border='1px solid '+(found?'#bbf7d0':'#fecaca');
-      res.textContent=found?'In service area':'Outside coverage';
-    }
-    const info=document.getElementById('terr-click-info');
-    if(info) info.textContent=`Clicked: ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E${found?' → '+found.name:' → No coverage'}`;
-  }
+  // terrMapClick handled by Google Maps click listener
 
   async function terrCheckAddress() {
     const input=document.getElementById('terr-addr-input');
