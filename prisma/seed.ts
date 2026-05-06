@@ -248,7 +248,7 @@ async function main() {
         reference: ref,
         customerId: customer.id,
         scheduledDate: futureDate,
-        scheduledTime: '09:00',
+        // scheduledTime omitted — will be set by route optimiser
         gardenSize: customer.gardenSize,
         frequency: customer.frequency,
         priceInPence: customer.pricePerCut,

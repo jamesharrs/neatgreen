@@ -1413,18 +1413,21 @@
         <div class="date-grid" id="date-grid"></div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Preferred time</label>
-        <div class="time-grid">
-          <div class="time-slot" onclick="selectTime(this)">8:00 AM</div>
-          <div class="time-slot" onclick="selectTime(this)">9:00 AM</div>
-          <div class="time-slot busy">10:00 AM</div>
-          <div class="time-slot" onclick="selectTime(this)">11:00 AM</div>
-          <div class="time-slot busy">1:00 PM</div>
-          <div class="time-slot" onclick="selectTime(this)">2:00 PM</div>
-          <div class="time-slot" onclick="selectTime(this)">3:00 PM</div>
-          <div class="time-slot" onclick="selectTime(this)">4:00 PM</div>
-          <div class="time-slot busy">5:00 PM</div>
+      <!-- ETA notice — replaces time picker -->
+      <div style="background:var(--green-pale);border-radius:12px;padding:16px 18px;
+        border:1px solid var(--border);margin-top:4px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="font-size:22px;flex-shrink:0">📱</div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--green-deep);margin-bottom:4px">
+              We'll send your arrival time the evening before
+            </div>
+            <div style="font-size:13px;color:var(--ink-light);line-height:1.5">
+              No need to pick a time — we plan the most efficient route for your area and text you a 
+              <strong>30-minute arrival window</strong> the evening before your cut. 
+              You'll just need to ensure gate access is available.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1452,8 +1455,8 @@
           <span class="cr-value" id="conf-freq">Fortnightly</span>
         </div>
         <div class="confirm-row">
-          <span class="cr-label">Date &amp; time</span>
-          <span class="cr-value" id="conf-dt">Wed 30 Apr · 9:00 AM</span>
+          <span class="cr-label">Date</span>
+          <span class="cr-value" id="conf-dt">TBC</span>
         </div>
         <div class="confirm-row">
           <span class="cr-label">Address</span>
@@ -1637,6 +1640,34 @@
             <div style="color:var(--ink-light);font-size:14px;padding:20px 0;text-align:center">No jobs today</div>
           </div>
         </div>
+      </div>
+
+      <!-- Tomorrow / Optimise card -->
+      <div id="tomorrow-jobs-card" class="admin-card" style="display:none;margin-top:16px">
+        <div class="admin-card-title">Tomorrow's Jobs
+          <span id="tomorrow-eta-status" style="font-size:12px;color:var(--ink-light);font-weight:400;margin-left:8px"></span>
+        </div>
+        <div id="tomorrow-jobs-list"><div style="color:var(--ink-light);font-size:14px;padding:12px 0;text-align:center">Loading...</div></div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--ink-light);display:block;margin-bottom:4px">DATE</label>
+            <input type="date" id="opt-date" style="border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-family:Inter,sans-serif;font-size:13px">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--ink-light);display:block;margin-bottom:4px">CREW DEPARTS</label>
+            <select id="opt-start-time" style="border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-family:Inter,sans-serif;font-size:13px;background:white">
+              <option value="07:30">7:30 AM</option>
+              <option value="08:00" selected>8:00 AM</option>
+              <option value="08:30">8:30 AM</option>
+              <option value="09:00">9:00 AM</option>
+            </select>
+          </div>
+          <button onclick="runOptimiseAndNotify()" id="opt-btn"
+            style="padding:10px 20px;background:var(--green-deep);color:white;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">
+            Optimise &amp; Calculate ETAs
+          </button>
+        </div>
+        <div id="opt-result" style="margin-top:12px"></div>
       </div>
 
       <!-- Bookings section -->
@@ -2887,7 +2918,7 @@
       const confFreq = document.getElementById('conf-freq');
       if (confFreq) confFreq.textContent = bookData.freq === 'ONE_OFF' ? 'One-off' : bookData.freq === 'FORTNIGHTLY' ? 'Fortnightly' : 'Monthly';
       const confDt = document.getElementById('conf-dt');
-      if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
+      if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBA — ETA sent evening before');
       const addrEl = document.getElementById('conf-addr');
       if (addrEl) {
         addrEl.innerHTML = bookData.address || 'Your address';
@@ -3128,7 +3159,7 @@
       document.getElementById('conf-size').textContent = sizeLabels[bookData.size] || 'Garden cut';
       document.getElementById('conf-area').textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
       document.getElementById('conf-freq').textContent = bookData.freq || 'Fortnightly';
-      document.getElementById('conf-dt').textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
+      document.getElementById('conf-dt').textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBA — ETA sent evening before');
       // Full address breakdown
 
       if (addrEl) {
@@ -3290,7 +3321,7 @@
       if (confSize) confSize.textContent = sizeLabels4[bookData.size] || 'Garden cut';
       if (confArea) confArea.textContent = bookData.gardenAreaM2 ? bookData.gardenAreaM2 + 'm²' : 'Measured on map';
       if (confFreq) confFreq.textContent = bookData.freq || 'Fortnightly';
-      if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBC');
+      if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBA — ETA sent evening before');
       if (addrEl) {
         addrEl.innerHTML = bookData.address || 'Your address';
         if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
@@ -3774,6 +3805,8 @@
     } catch(err) {
       console.error('Dashboard load error:', err);
     }
+    // Load tomorrow's jobs
+    await loadTomorrowJobs();
 
     document.getElementById('admin-loading').style.display = 'none';
     document.getElementById('admin-section-dashboard').style.display = 'block';
@@ -4553,6 +4586,128 @@
       setTimeout(terrDrawMap, 100);
     }
   };
+
+
+  // ══════════════════════════════════════
+  // TOMORROW'S JOBS + ROUTE OPTIMISATION
+  // ══════════════════════════════════════
+  async function loadTomorrowJobs() {
+    const card = document.getElementById('tomorrow-jobs-card');
+    const listEl = document.getElementById('tomorrow-jobs-list');
+    const statusEl = document.getElementById('tomorrow-eta-status');
+    const optDateEl = document.getElementById('opt-date');
+
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    if (optDateEl && !optDateEl.value) optDateEl.value = tomorrowStr;
+
+    try {
+      const res = await fetch('/api/bookings?date=' + tomorrowStr);
+      const { bookings } = await res.json();
+
+      if (!bookings || !bookings.length) {
+        if (card) card.style.display = 'none';
+        return;
+      }
+
+      if (card) card.style.display = 'block';
+
+      const etaSent = bookings.filter(b => b.job?.etaNotifiedAt).length;
+      if (statusEl) statusEl.textContent = etaSent > 0
+        ? `${etaSent}/${bookings.length} ETAs sent`
+        : `${bookings.length} job${bookings.length !== 1 ? 's' : ''} — ETAs not yet sent`;
+
+      if (listEl) {
+        listEl.innerHTML = bookings.map(b => {
+          const eta = b.job?.etaWindow;
+          return `<div style="display:flex;gap:12px;align-items:center;padding:10px 0;
+            border-bottom:1px solid var(--border)">
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px;color:var(--green-deep)">${b.customer?.name || '—'}</div>
+              <div style="font-size:12px;color:var(--ink-light)">${b.customer?.addressLine1 || ''}, ${b.customer?.postcode || ''}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700;color:var(--green-deep)">${b.customer?.gardenSize || ''}</div>
+              ${eta
+                ? `<div style="font-size:12px;color:var(--green-mid);font-weight:600">ETA: ${eta}</div>`
+                : `<div style="font-size:12px;color:var(--ink-light)">No ETA yet</div>`
+              }
+              <div style="font-size:12px;color:var(--ink-light)">£${Math.round((b.priceInPence||0)/100)}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    } catch(err) {
+      console.error('loadTomorrowJobs error:', err);
+    }
+  }
+
+  async function runOptimiseAndNotify() {
+    const btn = document.getElementById('opt-btn');
+    const resultEl = document.getElementById('opt-result');
+    const date = document.getElementById('opt-date')?.value;
+    const startTime = document.getElementById('opt-start-time')?.value || '08:00';
+
+    if (!date) { alert('Please select a date'); return; }
+
+    btn.textContent = 'Optimising...';
+    btn.disabled = true;
+    if (resultEl) resultEl.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/routes/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, startTime }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Optimisation failed');
+
+      // Show results
+      if (resultEl) {
+        resultEl.innerHTML = `
+          <div style="background:var(--green-pale);border-radius:10px;padding:14px;border:1px solid var(--border)">
+            <div style="font-weight:700;color:var(--green-deep);margin-bottom:10px">
+              Route optimised — ${data.stops} stops · ${data.totalMiles} miles
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${data.route.map((r, i) => `
+                <div style="display:flex;gap:12px;align-items:center;padding:8px 10px;
+                  background:white;border-radius:8px;border:1px solid var(--border)">
+                  <div style="width:26px;height:26px;border-radius:50%;background:var(--green-mid);
+                    color:white;display:flex;align-items:center;justify-content:center;
+                    font-weight:800;font-size:12px;flex-shrink:0">${r.order}</div>
+                  <div style="flex:1">
+                    <div style="font-weight:600;font-size:13px;color:var(--green-deep)">${r.customerName}</div>
+                    <div style="font-size:11px;color:var(--ink-light)">${r.address}</div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0">
+                    <div style="font-weight:700;font-size:13px;color:var(--green-deep)">${r.etaWindow}</div>
+                    <div style="font-size:11px;color:var(--ink-light)">${r.driveMins}min drive · ${r.jobMins}min job</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div style="margin-top:12px;padding:10px 12px;background:#fff8e1;border-radius:8px;
+              border:1px solid #ffe082;font-size:12px;color:#7a5c00">
+              ETAs calculated and saved. Add Twilio credentials in settings to enable automatic SMS notifications.
+            </div>
+          </div>`;
+      }
+
+      // Reload tomorrow list with updated ETAs
+      await loadTomorrowJobs();
+
+    } catch(err) {
+      if (resultEl) resultEl.innerHTML = `<div style="color:var(--warn);font-size:13px;padding:10px">${err.message}</div>`;
+    } finally {
+      btn.textContent = 'Optimise & Calculate ETAs';
+      btn.disabled = false;
+    }
+  }
 
 </script>
 </body>

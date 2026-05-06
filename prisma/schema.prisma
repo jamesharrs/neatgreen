@@ -99,7 +99,7 @@ model Booking {
   customer     Customer      @relation(fields: [customerId], references: [id])
 
   scheduledDate DateTime
-  scheduledTime String        // e.g. "09:00"
+  scheduledTime String?       // null until ETA is sent day before
 
   gardenSize   GardenSize
   frequency    Frequency
@@ -139,6 +139,10 @@ model Job {
   photoUrl    String?     // completion photo
   crewNotes   String?
   rating      Int?        // customer rating 1-5
+
+  // ETA window (set when admin runs optimise+notify)
+  etaWindow       String?   // e.g. "10:00-10:30"
+  etaNotifiedAt   DateTime? // when the SMS was sent
 
   // Twilio SMS sent flags
   reminderSent    Boolean @default(false)
