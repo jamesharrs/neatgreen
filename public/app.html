@@ -1275,16 +1275,11 @@
             <div style="display:flex;gap:12px;align-items:center;font-size:13px;color:var(--ink-light)">
               <span style="background:var(--green-mid);color:white;border-radius:50%;width:22px;height:22px;
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12px">1</span>
-              <span>Click each corner of your lawn to place points — the shape closes automatically</span>
+              <span>Click each corner of your lawn — double-click the last point to finish</span>
             </div>
             <div style="display:flex;gap:12px;align-items:center;font-size:13px;color:var(--ink-light)">
               <span style="background:var(--green-mid);color:white;border-radius:50%;width:22px;height:22px;
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12px">2</span>
-              <span>Double-click your last point to finish drawing</span>
-            </div>
-            <div style="display:flex;gap:12px;align-items:center;font-size:13px;color:var(--ink-light)">
-              <span style="background:var(--green-mid);color:white;border-radius:50%;width:22px;height:22px;
-                display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12px">3</span>
               <span>Drag the green dots to fine-tune the boundary — price updates instantly</span>
             </div>
           </div>
@@ -1320,7 +1315,7 @@
 
       <div class="step-nav" style="margin-top:24px">
         <button class="btn-back" onclick="bookNextStep(1)">← Back</button>
-        <button class="btn-next" onclick="bookNextStep(3)">Continue — Choose date &amp; time →</button>
+        <button class="btn-next" onclick="bookNextStep(3)">Continue — Choose your date →</button>
       </div>
     </div>
 
@@ -2941,7 +2936,13 @@
       if (confDt) confDt.textContent = (bookData.date || 'TBC') + ' · ' + (bookData.time || 'TBA — ETA sent evening before');
       const addrEl = document.getElementById('conf-addr');
       if (addrEl) {
-        addrEl.innerHTML = bookData.address || 'Your address';
+        // Strip postcode from end of address string to avoid duplication
+        let addrText = bookData.address || 'Your address';
+        if (bookData.postcode) {
+          const pcRegex = new RegExp(',?\\s*' + bookData.postcode.replace(/\s/g,'\\s*') + '(,.*)?$', 'i');
+          addrText = addrText.replace(pcRegex, '').replace(/, UK$/, '').trim().replace(/,$/, '');
+        }
+        addrEl.innerHTML = addrText;
         if (bookData.postcode) addrEl.innerHTML += '<br><span style="font-weight:400;color:var(--ink-light)">' + bookData.postcode + '</span>';
       }
       const notesEl = document.getElementById('conf-notes-row');
