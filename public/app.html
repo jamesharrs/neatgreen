@@ -1181,7 +1181,7 @@
     <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-light);margin-bottom:36px">
       <span id="step-label-1" style="font-weight:600;color:var(--green-mid)">1. Your address</span>
       <span id="step-label-2">2. Map &amp; price</span>
-      <span id="step-label-3">3. Date &amp; confirm</span>
+      <span id="step-label-3">3. Date &amp; book</span>
     </div>
 
     <!-- STEP 1: Address & Lawn Map -->
@@ -1397,10 +1397,23 @@
         <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;color:var(--green-deep)" id="price-live-amount">£45</div>
       </div>
 
-      <!-- WEATHER NOTICE -->
-      <div id="weather-notice" style="display:none;margin-top:12px;padding:12px 16px;
-        background:#fff8e1;border-radius:10px;border:1px solid #ffe082;font-size:13px;color:#7a5c00">
-        <strong>Weather notice:</strong> We monitor the forecast for your area. If conditions are unsuitable on the day, we'll reschedule within 48 hours and notify you by text — at no extra cost.
+      <!-- ETA & weather info -->
+      <div id="weather-notice" style="margin-top:8px;padding:14px 16px;
+        background:var(--green-pale);border-radius:10px;border:1px solid var(--green-bright);font-size:13px">
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <div style="flex-shrink:0;font-size:18px">📱</div>
+          <div>
+            <div style="font-weight:700;color:var(--green-deep);margin-bottom:3px">We text your arrival window the evening before</div>
+            <div style="color:var(--ink-light)">No time slots needed — we plan the most efficient route for your area and send you a 30-minute arrival window (e.g. <strong>10:00–10:30am</strong>) so you know when to expect us.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="flex-shrink:0;font-size:18px">🌧</div>
+          <div>
+            <div style="font-weight:700;color:var(--green-deep);margin-bottom:3px">Bad weather? We reschedule automatically</div>
+            <div style="color:var(--ink-light)">If conditions are unsuitable, we'll move your cut to the next available slot and notify you — at no extra cost.</div>
+          </div>
+        </div>
       </div>
 
       <div class="form-group" style="margin-top:24px">
@@ -1493,8 +1506,15 @@
         Please fill in your name, email and phone number to continue.
       </div>
 
-      <div style="background:var(--green-pale);border-radius:var(--r-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--ink-light);">
-        Payment taken after each visit. No charge today. Cancel anytime.
+      <div style="background:var(--green-pale);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13px">
+        <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+          <span style="font-size:16px">📱</span>
+          <div><strong style="color:var(--green-deep)">You'll get a text the evening before</strong> with your 30-minute arrival window. No need to be home — just leave gate access available.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="font-size:16px">💳</span>
+          <div style="color:var(--ink-light)">Payment taken after each visit. No charge today. Cancel anytime.</div>
+        </div>
       </div>
       <div class="step-nav">
         <button class="btn-back" onclick="bookNextStep(2)">← Back</button>
@@ -3810,6 +3830,7 @@
 
     document.getElementById('admin-loading').style.display = 'none';
     document.getElementById('admin-section-dashboard').style.display = 'block';
+    loadTomorrowJobs();
   }
 
   async function loadAdminBookings() {
@@ -4706,6 +4727,157 @@
     } finally {
       btn.textContent = 'Optimise & Calculate ETAs';
       btn.disabled = false;
+    }
+  }
+
+
+  // ── TOMORROW'S JOBS + ETA OPTIMISATION ────────────────────
+  async function loadTomorrowJobs() {
+    const card = document.getElementById('tomorrow-jobs-card');
+    const listEl = document.getElementById('tomorrow-jobs-list');
+    const statusEl = document.getElementById('tomorrow-eta-status');
+    if (!card || !listEl) return;
+
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    const dateInput = document.getElementById('opt-date');
+    if (dateInput && !dateInput.value) dateInput.value = tomorrowStr;
+
+    try {
+      const date = dateInput?.value || tomorrowStr;
+      const res = await fetch('/api/jobs?date=' + date);
+      const { jobs } = await res.json();
+
+      card.style.display = 'block';
+
+      if (!jobs?.length) {
+        listEl.innerHTML = '<div style="color:var(--ink-light);font-size:14px;padding:12px 0;text-align:center">No jobs scheduled for this date</div>';
+        if (statusEl) statusEl.textContent = '0 jobs';
+        return;
+      }
+
+      if (statusEl) statusEl.textContent = jobs.length + ' job' + (jobs.length !== 1 ? 's' : '') + (jobs[0]?.etaWindow ? ' · ETAs calculated' : ' · ETAs pending');
+
+      jobs.sort((a, b) => (a.routeOrder || 99) - (b.routeOrder || 99));
+
+      listEl.innerHTML = jobs.map((j, i) => {
+        const b = j.booking, c = b?.customer;
+        const hasEta = !!j.etaWindow;
+        return `
+          <div style="display:flex;gap:10px;align-items:center;padding:10px 0;
+            border-bottom:1px solid var(--border)">
+            <div style="width:26px;height:26px;border-radius:50%;background:${hasEta?'var(--green-mid)':'var(--border)'};
+              color:white;display:flex;align-items:center;justify-content:center;
+              font-weight:800;font-size:12px;flex-shrink:0">${j.routeOrder||i+1}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;color:var(--green-deep)">${c?.name||'—'}</div>
+              <div style="font-size:12px;color:var(--ink-light)">${c?.addressLine1||''}, ${c?.postcode||''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              ${hasEta
+                ? `<div style="font-weight:700;font-size:13px;color:var(--green-mid)">${j.etaWindow}</div>
+                   <div style="font-size:11px;color:var(--ink-light)">ETA window</div>`
+                : `<div style="font-size:12px;color:var(--ink-light)">No ETA yet</div>`
+              }
+            </div>
+          </div>`;
+      }).join('');
+
+    } catch(err) {
+      if (listEl) listEl.innerHTML = '<div style="color:var(--warn);padding:12px 0;text-align:center">Error loading jobs</div>';
+    }
+  }
+
+  async function runOptimiseAndNotify(sendSms = false) {
+    const btn = document.getElementById('opt-btn');
+    const resultEl = document.getElementById('opt-result');
+    const date = document.getElementById('opt-date')?.value;
+    const startTime = document.getElementById('opt-start-time')?.value || '08:00';
+
+    if (btn) { btn.textContent = 'Optimising...'; btn.disabled = true; }
+    if (resultEl) resultEl.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/routes/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, startTime, sendSms }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed');
+
+      // Show results
+      if (resultEl) {
+        resultEl.innerHTML = `
+          <div style="background:var(--green-pale);border-radius:10px;padding:14px 16px;border:1px solid var(--green-bright)">
+            <div style="font-weight:700;color:var(--green-deep);margin-bottom:10px">
+              Route optimised for ${data.date} — ${data.jobCount} stops
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:800;color:var(--green-deep)">${data.startTime}</div>
+                <div style="font-size:11px;color:var(--ink-light)">Departs depot</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:800;color:var(--green-deep)">${data.finishTime}</div>
+                <div style="font-size:11px;color:var(--ink-light)">Est. finish</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:800;color:var(--green-deep)">${data.totalDriveMinutes}m</div>
+                <div style="font-size:11px;color:var(--ink-light)">Total driving</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:800;color:var(--green-deep)">${data.totalJobMinutes}m</div>
+                <div style="font-size:11px;color:var(--ink-light)">Total cutting</div>
+              </div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--green-deep);margin-bottom:6px">ETA windows calculated:</div>
+            ${data.jobs.map(j => `
+              <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px">
+                <div>
+                  <strong>${j.customerId?.name||'—'}</strong>
+                  <span style="color:var(--ink-light);margin-left:6px">${j.customerId?.postcode||''}</span>
+                </div>
+                <div style="font-weight:700;color:var(--green-mid)">${j.etaWindow}</div>
+              </div>
+            `).join('')}
+            ${sendSms
+              ? `<div style="margin-top:10px;padding:8px 12px;background:white;border-radius:8px;
+                  font-size:12px;color:var(--green-deep);font-weight:600">
+                  SMS notifications sent to ${data.jobCount} customers</div>`
+              : `<div style="margin-top:10px;font-size:12px;color:var(--ink-light)">
+                  ETAs saved — click "Send ETA Texts" to notify customers by SMS</div>`
+            }
+          </div>`;
+      }
+
+      // Add send SMS button if not sent yet
+      if (!sendSms && btn) {
+        btn.textContent = 'Optimise & Calculate ETAs';
+        btn.disabled = false;
+        // Create send SMS button
+        const existing = document.getElementById('btn-send-sms');
+        if (!existing) {
+          const smsBtn = document.createElement('button');
+          smsBtn.id = 'btn-send-sms';
+          smsBtn.textContent = 'Send ETA Texts to Customers';
+          smsBtn.style.cssText = 'margin-top:10px;width:100%;padding:12px;background:var(--green-bright);color:var(--green-deep);border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer';
+          smsBtn.onclick = () => runOptimiseAndNotify(true);
+          resultEl?.appendChild(smsBtn);
+        }
+      }
+
+      // Refresh job list to show new ETAs
+      loadTomorrowJobs();
+
+    } catch(err) {
+      if (resultEl) resultEl.innerHTML = `<div style="color:var(--warn);padding:10px;background:#fff0eb;border-radius:8px;font-size:13px">Error: ${err.message}</div>`;
+    } finally {
+      if (btn) { btn.textContent = 'Optimise & Calculate ETAs'; btn.disabled = false; }
     }
   }
 

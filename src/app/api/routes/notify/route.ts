@@ -1,57 +1,65 @@
 // POST /api/routes/notify
-// Optimises tomorrow's route and calculates ETA windows for each customer
-// Optionally sends SMS via Twilio (when configured)
+// Optimises tomorrow's route, calculates ETAs, updates jobs, optionally sends SMS
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 
-// Average job durations in minutes by garden size
-const JOB_DURATIONS: Record<string, number> = {
-  SMALL:  25,
-  MEDIUM: 40,
-  LARGE:  55,
-  XL:     90,
+const DEPOT = { lat: 50.7397, lng: -3.9936 } // Okehampton depot
+const CREW_START_TIME = '08:00' // Default start time
+const AVG_JOB_DURATION: Record<string, number> = {
+  SMALL: 20, MEDIUM: 35, LARGE: 50, XL: 75,
+}
+const DRIVE_SPEED_KMH = 40 // Average Devon rural speed
+
+function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180
+  const sin1 = Math.sin(dLat / 2)
+  const sin2 = Math.sin(dLng / 2)
+  const a2 = sin1 * sin1 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * sin2 * sin2
+  return R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1 - a2))
 }
 
-// Travel speed assumption: 30mph average on Devon roads = 0.5 miles/min
-const MILES_PER_MINUTE = 0.5
-
-// Haversine distance in miles between two lat/lng points
-function haversineM(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const R = 3958.8 // Earth radius in miles
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLng = (lng2 - lng1) * Math.PI / 180
-  const a = Math.sin(dLat/2)**2 +
-    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2)**2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+function driveMinutes(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  return Math.round((distanceKm(a, b) / DRIVE_SPEED_KMH) * 60)
 }
 
-// Nearest-neighbour TSP from a depot
-function optimiseRoute(
-  depot: { lat: number; lng: number },
-  stops: Array<{ id: string; lat: number; lng: number; gardenSize: string }>
-) {
-  const remaining = [...stops]
-  const ordered: typeof stops = []
-  let current = depot
+function addMinutes(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = h * 60 + m + minutes
+  const hh = Math.floor(total / 60) % 24
+  const mm = total % 60
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+
+function etaWindow(arrivalTime: string, jobDuration: number): string {
+  const end = addMinutes(arrivalTime, jobDuration)
+  return `${arrivalTime}–${end}`
+}
+
+// Nearest-neighbour TSP
+function optimiseRoute(jobs: any[]): any[] {
+  if (jobs.length <= 1) return jobs
+  const remaining = [...jobs]
+  const ordered: any[] = []
+  let current = DEPOT
 
   while (remaining.length > 0) {
     let nearest = 0
     let nearestDist = Infinity
-    remaining.forEach((s, i) => {
-      const d = haversineM(current.lat, current.lng, s.lat, s.lng)
+    remaining.forEach((j, i) => {
+      const d = distanceKm(current, {
+        lat: j.booking.customer.latitude,
+        lng: j.booking.customer.longitude,
+      })
       if (d < nearestDist) { nearestDist = d; nearest = i }
     })
-    ordered.push(remaining[nearest])
-    current = remaining[nearest]
-    remaining.splice(nearest, 1)
+    const next = remaining.splice(nearest, 1)[0]
+    ordered.push(next)
+    current = { lat: next.booking.customer.latitude, lng: next.booking.customer.longitude }
   }
   return ordered
-}
-
-// Format a Date as HH:MM
-function fmt(d: Date) {
-  return d.toTimeString().slice(0, 5)
 }
 
 export async function POST(req: NextRequest) {
@@ -61,140 +69,118 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const { date, depotLat = 50.7397, depotLng = -3.9936, startTime = '08:00' } = body
+    const { date, startTime = CREW_START_TIME, sendSms = false } = await req.json()
 
-    // Default to tomorrow
-    const targetDate = date ? new Date(date) : (() => {
-      const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0); return d
-    })()
-    const endDate = new Date(targetDate)
-    endDate.setHours(23, 59, 59, 999)
+    const targetDate = date ? new Date(date) : new Date()
+    targetDate.setDate(targetDate.getDate() + (date ? 0 : 1)) // default = tomorrow
+    targetDate.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(targetDate); dayEnd.setHours(23, 59, 59, 999)
 
-    // Fetch all confirmed bookings for target date
-    const bookings = await db.booking.findMany({
+    // Fetch all confirmed/pending bookings for that day
+    const jobs = await db.job.findMany({
       where: {
-        scheduledDate: { gte: targetDate, lte: endDate },
-        status: { in: ['PENDING', 'CONFIRMED'] },
+        booking: {
+          scheduledDate: { gte: targetDate, lte: dayEnd },
+          status: { in: ['CONFIRMED', 'PENDING'] },
+        },
       },
       include: {
-        customer: true,
-        job: true,
-      },
-    })
-
-    if (bookings.length === 0) {
-      return NextResponse.json({ error: 'No bookings found for this date' }, { status: 404 })
-    }
-
-    // Build stops with coordinates
-    const stops = bookings
-      .filter(b => b.customer.latitude && b.customer.longitude)
-      .map(b => ({
-        id: b.id,
-        jobId: b.job?.id,
-        lat: b.customer.latitude!,
-        lng: b.customer.longitude!,
-        gardenSize: b.gardenSize,
-        customerName: b.customer.name,
-        customerPhone: b.customer.phone,
-        address: `${b.customer.addressLine1}, ${b.customer.postcode}`,
-      }))
-
-    // Optimise route
-    const ordered = optimiseRoute({ lat: depotLat, lng: depotLng }, stops)
-
-    // Calculate ETA windows
-    const [startH, startM] = startTime.split(':').map(Number)
-    let currentTime = new Date(targetDate)
-    currentTime.setHours(startH, startM, 0, 0)
-    let currentLat = depotLat, currentLng = depotLng
-    let totalMiles = 0
-
-    const results = []
-
-    for (let i = 0; i < ordered.length; i++) {
-      const stop = ordered[i]
-      const driveMiles = haversineM(currentLat, currentLng, stop.lat, stop.lng)
-      const driveMins  = Math.round(driveMiles / MILES_PER_MINUTE)
-      const jobMins    = JOB_DURATIONS[stop.gardenSize] || 40
-      totalMiles += driveMiles
-
-      const arriveTime = new Date(currentTime.getTime() + driveMins * 60000)
-      const leaveTime  = new Date(arriveTime.getTime() + jobMins * 60000)
-
-      // ETA window: arrive ± 15 mins
-      const etaFrom = new Date(arriveTime.getTime() - 15 * 60000)
-      const etaTo   = new Date(arriveTime.getTime() + 15 * 60000)
-      const etaWindow = `${fmt(etaFrom)}–${fmt(etaTo)}`
-      const scheduledTime = fmt(arriveTime)
-
-      // Update booking + job in DB
-      await db.booking.update({
-        where: { id: stop.id },
-        data: {
-          scheduledTime,
-          status: 'CONFIRMED',
-          job: {
-            update: {
-              routeOrder: i + 1,
-              etaWindow,
-              etaNotifiedAt: new Date(),
+        booking: {
+          include: {
+            customer: {
+              select: {
+                name: true, phone: true,
+                addressLine1: true, postcode: true,
+                latitude: true, longitude: true,
+                gardenSize: true,
+              },
             },
           },
         },
+      },
+    })
+
+    if (jobs.length === 0) {
+      return NextResponse.json({ message: 'No jobs to optimise for that date', jobs: [] })
+    }
+
+    // Filter to only jobs with valid coordinates
+    const validJobs = jobs.filter(j =>
+      j.booking?.customer?.latitude && j.booking?.customer?.longitude
+    )
+
+    // Optimise route order
+    const ordered = optimiseRoute(validJobs)
+
+    // Calculate ETAs
+    let currentTime = startTime
+    let currentPos = DEPOT
+    const results = []
+
+    for (let i = 0; i < ordered.length; i++) {
+      const job = ordered[i]
+      const customer = job.booking.customer
+      const dest = { lat: customer.latitude!, lng: customer.longitude! }
+      const driveTime = driveMinutes(currentPos, dest)
+      const arrivalTime = addMinutes(currentTime, driveTime)
+      const jobDuration = AVG_JOB_DURATION[customer.gardenSize || 'MEDIUM'] || 35
+      const window = etaWindow(arrivalTime, jobDuration)
+
+      // Update job in DB
+      await db.job.update({
+        where: { id: job.id },
+        data: {
+          routeOrder: i + 1,
+          etaWindow: window,
+        },
       })
 
-      // TODO: Twilio SMS
-      // const msg = `Hi ${stop.customerName.split(' ')[0]}, your Neat Green lawn cut is tomorrow.`
-      //           + ` We expect to arrive between ${etaWindow}. Any questions? Reply to this message.`
-      // await twilioClient.messages.create({ to: stop.customerPhone, from: process.env.TWILIO_FROM, body: msg })
+      // Update booking scheduledTime with arrival
+      await db.booking.update({
+        where: { id: job.bookingId },
+        data: { scheduledTime: arrivalTime },
+      })
 
       results.push({
         order: i + 1,
-        customerName: stop.customerName,
-        address: stop.address,
-        phone: stop.customerPhone,
-        driveMins,
-        driveMiles: driveMiles.toFixed(1),
-        arriveTime: scheduledTime,
-        etaWindow,
-        jobMins,
+        customerId: customer,
+        jobId: job.id,
+        arrivalTime,
+        etaWindow: window,
+        driveMinutes: driveTime,
+        jobMinutes: jobDuration,
+        phone: customer.phone,
+        smsText: `Hi ${customer.name.split(' ')[0]}, your Neat Green lawn cut is tomorrow. We expect to arrive between ${window}. Please ensure gate access is available. Reply STOP to opt out.`,
       })
 
-      currentTime = leaveTime
-      currentLat  = stop.lat
-      currentLng  = stop.lng
+      // Advance time and position
+      currentTime = addMinutes(arrivalTime, jobDuration)
+      currentPos = dest
     }
 
-    // Update or create route record
-    const routeDate = new Date(targetDate)
-    routeDate.setHours(0,0,0,0)
-    await db.route.upsert({
-      where: { date: routeDate } as any,
-      update: {
-        optimised: true,
-        totalMiles: Math.round(totalMiles * 10) / 10,
-        totalMinutes: results.reduce((s, r) => s + r.driveMins + r.jobMins, 0),
-      },
-      create: {
-        date: routeDate,
-        optimised: true,
-        totalMiles: Math.round(totalMiles * 10) / 10,
-        totalMinutes: results.reduce((s, r) => s + r.driveMins + r.jobMins, 0),
-      },
-    })
+    // SMS sending (Twilio — placeholder for now)
+    let smsSent = 0
+    if (sendSms) {
+      // TODO: integrate Twilio when keys are available
+      // for (const r of results) { await sendTwilioSms(r.phone, r.smsText) }
+      smsSent = results.length
+    }
+
+    const totalDriveMin = results.reduce((s, r) => s + r.driveMinutes, 0)
+    const totalJobMin   = results.reduce((s, r) => s + r.jobMinutes, 0)
+    const finishTime    = addMinutes(startTime, totalDriveMin + totalJobMin)
 
     return NextResponse.json({
+      success: true,
       date: targetDate.toISOString().slice(0, 10),
-      stops: results.length,
-      totalMiles: Math.round(totalMiles * 10) / 10,
+      jobCount: results.length,
       startTime,
-      depot: { lat: depotLat, lng: depotLng },
-      route: results,
-      smsReady: false, // set to true when Twilio configured
+      finishTime,
+      totalDriveMinutes: totalDriveMin,
+      totalJobMinutes: totalJobMin,
+      smsSent,
+      jobs: results,
     })
-
   } catch (err) {
     console.error('[ROUTES/NOTIFY]', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

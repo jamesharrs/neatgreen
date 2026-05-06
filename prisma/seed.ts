@@ -248,7 +248,7 @@ async function main() {
         reference: ref,
         customerId: customer.id,
         scheduledDate: futureDate,
-        // scheduledTime omitted — will be set by route optimiser
+        scheduledTime: undefined,
         gardenSize: customer.gardenSize,
         frequency: customer.frequency,
         priceInPence: customer.pricePerCut,
