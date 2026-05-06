@@ -977,7 +977,7 @@
 <!-- NAV -->
 <nav>
   <div class="nav-logo" onclick="showPage('home')">
-    <div class="leaf"></div>
+    <!-- leaf replaced --><div class="leaf" style="display:none"></div>
     Neat<span> Green</span>
   </div>
   <div class="nav-tabs">
@@ -1275,11 +1275,16 @@
             <div style="display:flex;gap:12px;align-items:center;font-size:13px;color:var(--ink-light)">
               <span style="background:var(--green-mid);color:white;border-radius:50%;width:22px;height:22px;
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12px">1</span>
-              <span>Click each corner of your lawn — double-click the last point to finish</span>
+              <span>Drag the map to find your lawn — use <strong style="color:var(--green-deep)">+</strong> and <strong style="color:var(--green-deep)">−</strong> to zoom in until you can clearly see your garden</span>
             </div>
             <div style="display:flex;gap:12px;align-items:center;font-size:13px;color:var(--ink-light)">
               <span style="background:var(--green-mid);color:white;border-radius:50%;width:22px;height:22px;
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12px">2</span>
+              <span>Click each corner of your lawn — double-click the last point to finish</span>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;font-size:13px;color:var(--ink-light)">
+              <span style="background:var(--green-mid);color:white;border-radius:50%;width:22px;height:22px;
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12px">3</span>
               <span>Drag the green dots to fine-tune the boundary — price updates instantly</span>
             </div>
           </div>
