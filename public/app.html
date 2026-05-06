@@ -1759,10 +1759,20 @@
 
       <!-- Route section -->
       <div id="admin-section-route" style="display:none">
-        <div class="admin-header"><div><h2>Today's Route</h2><p>Live job map</p></div></div>
-        <div class="admin-card">
-          <div id="admin-route-map" style="width:100%;height:400px;border-radius:12px;background:#eaf2eb;margin-bottom:16px"></div>
-          <div id="admin-route-list"></div>
+        <div class="admin-header">
+          <div><h2>Today's Route</h2><p>Live job map with real routing</p></div>
+          <button onclick="loadAdminRoute()" style="padding:9px 18px;border-radius:9px;border:1.5px solid var(--border);
+            background:white;color:var(--green-deep);font-weight:700;font-size:13px;cursor:pointer">
+            ↺ Refresh
+          </button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+          <div class="admin-card" style="padding:0;overflow:hidden">
+            <div id="admin-route-map" style="width:100%;height:500px;background:#eaf2eb"></div>
+          </div>
+          <div id="admin-route-list">
+            <div style="color:var(--ink-light);text-align:center;padding:40px">Loading...</div>
+          </div>
         </div>
       </div>
     </div>
@@ -3824,46 +3834,181 @@
     }
   }
 
+  let adminRouteMap = null;
+
   async function loadAdminRoute() {
-    const el = document.getElementById('admin-route-map');
-    const list = document.getElementById('admin-route-list');
+    const mapEl = document.getElementById('admin-route-map');
+    const list   = document.getElementById('admin-route-list');
+    if (!mapEl) return;
+
+    // Loading state
+    if (list) list.innerHTML = '<div style="color:var(--ink-light);text-align:center;padding:20px">Loading today\u2019s route...</div>';
+
     try {
       const res = await fetch('/api/jobs');
       const { jobs } = await res.json();
+
       if (!jobs?.length) {
-        if (list) list.innerHTML = '<p style="color:var(--ink-light);text-align:center;padding:20px">No jobs today</p>';
+        if (list) list.innerHTML = '<div style="color:var(--ink-light);text-align:center;padding:24px">No jobs scheduled today</div>';
         return;
       }
-      // Show job list
-      list.innerHTML = jobs.map((j, i) => `
-        <div class="schedule-item">
-          <div class="schedule-time">${j.booking?.scheduledTime || '—'}</div>
-          <div class="schedule-info">
-            <div class="schedule-name">${j.booking?.customer?.name || '—'}</div>
-            <div class="schedule-addr">${j.booking?.customer?.addressLine1 || ''}, ${j.booking?.customer?.postcode || ''}</div>
+
+      // Sort by route order
+      jobs.sort((a, b) => (a.routeOrder || 0) - (b.routeOrder || 0));
+
+      // Render stop list
+      if (list) {
+        const statusColors = { COMPLETED:'var(--green-mid)', IN_PROGRESS:'#f59e0b', CONFIRMED:'var(--green-bright)', PENDING:'var(--ink-light)', CANCELLED:'var(--warn)' };
+        list.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;padding:14px;background:var(--green-pale);border-radius:10px;border:1px solid var(--border)">
+            <div style="text-align:center">
+              <div style="font-size:22px;font-weight:800;color:var(--green-deep)">${jobs.length}</div>
+              <div style="font-size:11px;color:var(--ink-light)">Total stops</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:22px;font-weight:800;color:var(--green-mid)">${jobs.filter(j=>j.booking?.status==='COMPLETED').length}</div>
+              <div style="font-size:11px;color:var(--ink-light)">Completed</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:22px;font-weight:800;color:var(--green-deep)">£${jobs.reduce((s,j)=>s+Math.round((j.booking?.priceInPence||0)/100),0)}</div>
+              <div style="font-size:11px;color:var(--ink-light)">Day revenue</div>
+            </div>
           </div>
-          <span class="status-badge ${(j.booking?.status || 'pending').toLowerCase()}">${j.booking?.status || 'PENDING'}</span>
-        </div>
-      `).join('');
-      // Plot on map
+          <div style="display:flex;flex-direction:column;gap:8px">
+          ${jobs.map((j, i) => {
+            const b = j.booking, c = b?.customer;
+            const status = b?.status || 'PENDING';
+            const isDone = status === 'COMPLETED';
+            const isNow  = status === 'IN_PROGRESS';
+            const col = statusColors[status] || 'var(--ink-light)';
+            return `<div style="display:flex;gap:12px;align-items:center;padding:12px 14px;
+              background:${isDone?'#f0fdf4':isNow?'#fffbeb':'white'};
+              border:1.5px solid ${isDone?'#bbf7d0':isNow?'#fde68a':'var(--border)'};
+              border-radius:10px">
+              <div style="width:30px;height:30px;border-radius:50%;background:${col};color:white;
+                display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">
+                ${isDone?'✓':i+1}
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;font-size:14px;color:var(--green-deep)">${c?.name||'Unknown'}</div>
+                <div style="font-size:12px;color:var(--ink-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  ${c?.addressLine1||''}, ${c?.postcode||''}
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-weight:700;font-size:13px;color:var(--green-deep)">${b?.scheduledTime||'—'}</div>
+                <div style="font-size:11px;color:${col};font-weight:600;margin-top:2px">${status.replace('_',' ')}</div>
+                <div style="font-size:11px;color:var(--ink-light)">£${Math.round((b?.priceInPence||0)/100)}</div>
+              </div>
+            </div>`;
+          }).join('')}
+          </div>
+        `;
+      }
+
+      // Build map with real routing
       loadGoogleMaps(() => {
-        const routeMap = new google.maps.Map(el, {
-          zoom: 12, mapTypeId: 'roadmap', mapId: 'DEMO_MAP_ID',
-          center: { lat: 51.458, lng: -0.128 },
-          disableDefaultUI: true, zoomControl: true,
+        if (!adminRouteMap) {
+          adminRouteMap = new google.maps.Map(mapEl, {
+            zoom: 11, mapTypeId: 'roadmap', mapId: 'DEMO_MAP_ID',
+            center: { lat: 50.74, lng: -3.98 },
+            disableDefaultUI: false, zoomControl: true,
+            streetViewControl: false, mapTypeControl: false, fullscreenControl: true,
+          });
+        }
+
+        // Place numbered markers
+        const validJobs = jobs.filter(j => j.booking?.customer?.latitude && j.booking?.customer?.longitude);
+        const bounds = new google.maps.LatLngBounds();
+
+        validJobs.forEach((j, i) => {
+          const lat = j.booking.customer.latitude;
+          const lng = j.booking.customer.longitude;
+          const status = j.booking?.status || 'PENDING';
+          const isDone = status === 'COMPLETED';
+          const isNow  = status === 'IN_PROGRESS';
+          const bg = isDone ? '#22c55e' : isNow ? '#f59e0b' : '#1a5c2a';
+
+          const pin = document.createElement('div');
+          pin.style.cssText = `width:32px;height:32px;border-radius:50%;background:${bg};
+            color:white;display:flex;align-items:center;justify-content:center;
+            font-weight:800;font-size:14px;border:2.5px solid white;
+            box-shadow:0 3px 8px rgba(0,0,0,0.35);cursor:pointer`;
+          pin.textContent = isDone ? '✓' : (i + 1);
+
+          const marker = new google.maps.marker.AdvancedMarkerElement({
+            position: { lat, lng }, map: adminRouteMap, content: pin,
+            title: j.booking?.customer?.name,
+          });
+
+          // Info window on click
+          const infoWindow = new google.maps.InfoWindow({
+            content: `<div style="font-family:Inter,sans-serif;padding:4px">
+              <div style="font-weight:700;color:#1a2e1a;margin-bottom:2px">${j.booking?.customer?.name}</div>
+              <div style="font-size:12px;color:#666">${j.booking?.customer?.addressLine1}, ${j.booking?.customer?.postcode}</div>
+              <div style="font-size:12px;color:#666;margin-top:4px">⏰ ${j.booking?.scheduledTime} &nbsp;·&nbsp; £${Math.round((j.booking?.priceInPence||0)/100)}</div>
+              <div style="font-size:11px;font-weight:600;color:${bg};margin-top:4px">\${status.replace('_',' ')}</div>
+            </div>`,
+          });
+          marker.addListener('click', () => infoWindow.open(adminRouteMap, marker));
+
+          bounds.extend({ lat, lng });
         });
-        jobs.forEach((j, i) => {
-          const lat = j.booking?.customer?.latitude;
-          const lng = j.booking?.customer?.longitude;
-          if (!lat || !lng) return;
-          const dot = document.createElement('div');
-          dot.style.cssText = 'width:28px;height:28px;border-radius:50%;background:var(--green-mid);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)';
-          dot.textContent = i + 1;
-          new google.maps.marker.AdvancedMarkerElement({ position: { lat, lng }, map: routeMap, content: dot });
-        });
+
+        // Draw route using Directions API if 2+ stops
+        if (validJobs.length >= 2) {
+          const directionsService = new google.maps.DirectionsService();
+          const directionsRenderer = new google.maps.DirectionsRenderer({
+            suppressMarkers: true, // we have our own markers
+            polylineOptions: {
+              strokeColor: '#1a5c2a',
+              strokeWeight: 3,
+              strokeOpacity: 0.7,
+            },
+          });
+          directionsRenderer.setMap(adminRouteMap);
+
+          const origin = { lat: validJobs[0].booking.customer.latitude, lng: validJobs[0].booking.customer.longitude };
+          const destination = { lat: validJobs[validJobs.length-1].booking.customer.latitude, lng: validJobs[validJobs.length-1].booking.customer.longitude };
+          const waypoints = validJobs.slice(1, -1).map(j => ({
+            location: { lat: j.booking.customer.latitude, lng: j.booking.customer.longitude },
+            stopover: true,
+          }));
+
+          directionsService.route({
+            origin, destination, waypoints,
+            travelMode: google.maps.TravelMode.DRIVING,
+            optimizeWaypoints: false,
+          }, (result, status) => {
+            if (status === 'OK') {
+              directionsRenderer.setDirections(result);
+              // Show total drive time
+              const legs = result.routes[0]?.legs || [];
+              const totalMins = legs.reduce((s, l) => s + Math.round(l.duration.value / 60), 0);
+              const totalMiles = (legs.reduce((s, l) => s + l.distance.value, 0) / 1609).toFixed(1);
+              const statsEl = list?.querySelector('div');
+              if (statsEl) {
+                statsEl.innerHTML += `
+                  <div style="text-align:center;border-left:1px solid var(--border)">
+                    <div style="font-size:22px;font-weight:800;color:var(--green-deep)">${totalMins}m</div>
+                    <div style="font-size:11px;color:var(--ink-light)">Drive time</div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:22px;font-weight:800;color:var(--green-deep)">${totalMiles}mi</div>
+                    <div style="font-size:11px;color:var(--ink-light)">Total distance</div>
+                  </div>`;
+                statsEl.style.gridTemplateColumns = 'repeat(5,1fr)';
+              }
+            }
+          });
+        }
+
+        adminRouteMap.fitBounds(bounds, 50);
       });
+
     } catch(err) {
-      list.innerHTML = '<p style="color:var(--warn);padding:20px">Error loading route</p>';
+      console.error('Route error:', err);
+      if (list) list.innerHTML = '<div style="color:var(--warn);text-align:center;padding:20px">Error loading route data</div>';
     }
   }
 
