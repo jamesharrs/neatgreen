@@ -7,9 +7,10 @@ import { getCurrentUser } from '@/lib/auth'
 const DEPOT = { lat: 50.7397, lng: -3.9936 } // Okehampton depot
 const CREW_START_TIME = '08:00' // Default start time
 const AVG_JOB_DURATION: Record<string, number> = {
-  SMALL: 20, MEDIUM: 35, LARGE: 50, XL: 75,
+  SMALL: 25, MEDIUM: 40, LARGE: 55, XL: 80,
 }
-const DRIVE_SPEED_KMH = 40 // Average Devon rural speed
+const DRIVE_SPEED_KMH = 35 // Devon rural speed — conservative
+const TRAVEL_BUFFER_MINS = 5 // parking, gate, setup time per stop
 
 function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371
@@ -121,10 +122,12 @@ export async function POST(req: NextRequest) {
       const job = ordered[i]
       const customer = job.booking.customer
       const dest = { lat: customer.latitude!, lng: customer.longitude! }
-      const driveTime = driveMinutes(currentPos, dest)
+      const driveTime = driveMinutes(currentPos, dest) + TRAVEL_BUFFER_MINS
       const arrivalTime = addMinutes(currentTime, driveTime)
-      const jobDuration = AVG_JOB_DURATION[customer.gardenSize || 'MEDIUM'] || 35
+      const jobDuration = AVG_JOB_DURATION[customer.gardenSize || 'MEDIUM'] || 40
       const window = etaWindow(arrivalTime, jobDuration)
+      const stopFinishTime = addMinutes(arrivalTime, jobDuration)
+
 
       await db.job.update({
         where: { id: job.id },
@@ -154,8 +157,8 @@ export async function POST(req: NextRequest) {
         smsText: `Hi ${customer.name.split(' ')[0]}, your Neat Green lawn cut is tomorrow. We expect to arrive between ${window}. Please ensure gate access is available. Reply STOP to opt out.`,
       })
 
-      // Advance time and position
-      currentTime = addMinutes(arrivalTime, jobDuration)
+      // Advance time and position for next stop
+      currentTime = stopFinishTime
       currentPos = dest
     }
 
@@ -169,7 +172,8 @@ export async function POST(req: NextRequest) {
 
     const totalDriveMin = results.reduce((s, r) => s + r.driveMinutes, 0)
     const totalJobMin   = results.reduce((s, r) => s + r.jobMinutes, 0)
-    const finishTime    = addMinutes(startTime, totalDriveMin + totalJobMin)
+    const lastR = results[results.length - 1]
+    const finishTime = lastR ? addMinutes(lastR.arrivalTime, lastR.jobMinutes) : startTime
 
     return NextResponse.json({
       success: true,
