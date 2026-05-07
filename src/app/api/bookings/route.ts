@@ -22,6 +22,7 @@ const createBookingSchema = z.object({
   // Lawn
   gardenSize: z.enum(['SMALL', 'MEDIUM', 'LARGE', 'XL']),
   gardenAreaM2: z.number().optional(),
+  gardenPolygon: z.string().optional(), // JSON string of [[lng,lat],...]
   gardenNotes: z.string().optional(),
   overgrown: z.boolean().optional(),
   clippings: z.boolean().optional(),
@@ -125,6 +126,7 @@ export async function POST(req: NextRequest) {
         longitude: data.longitude,
         gardenSize: data.gardenSize,
         gardenAreaM2: data.gardenAreaM2,
+        gardenPolygon: data.gardenPolygon,
         gardenNotes: [
           data.gardenNotes,
           data.overgrown ? 'OVERGROWN' : null,
@@ -146,6 +148,7 @@ export async function POST(req: NextRequest) {
         longitude: data.longitude,
         gardenSize: data.gardenSize,
         gardenAreaM2: data.gardenAreaM2,
+        gardenPolygon: data.gardenPolygon,
         gardenNotes: [
           data.gardenNotes,
           data.overgrown ? 'OVERGROWN' : null,

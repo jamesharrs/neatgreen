@@ -29,8 +29,10 @@ function driveMinutes(a: { lat: number; lng: number }, b: { lat: number; lng: nu
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number)
   const total = h * 60 + m + minutes
-  const hh = Math.floor(total / 60) % 24
-  const mm = total % 60
+  // Round to nearest 5 minutes
+  const rounded = Math.round(total / 5) * 5
+  const hh = Math.floor(rounded / 60) % 24
+  const mm = rounded % 60
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
 }
 

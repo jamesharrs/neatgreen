@@ -75,6 +75,7 @@ model Customer {
   // Lawn details (from Maps sizing tool)
   gardenSize      GardenSize  @default(MEDIUM)
   gardenAreaM2    Float?      // actual measured area in m²
+  gardenPolygon   String?     // JSON [[lng,lat],...] from customer map drawing
   gardenNotes     String?     // access notes, gate codes etc.
 
   // Subscription
