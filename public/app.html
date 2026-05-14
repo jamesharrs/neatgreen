@@ -942,6 +942,7 @@
     .hero-stats { gap: 16px; margin-top: 24px; padding-top: 20px; }
     .stat-num { font-size: 22px; }
     .booking-card { padding: 20px 16px; border-radius: 16px; max-width: 100% !important; }
+    .booking-card button[onclick*="heroLookup"], button[onclick*="lookupPostcode"] { width: 100%; }
     .section { padding: 40px 16px; }
     .section-title { font-size: 26px; margin-bottom: 28px; }
     .step-card { padding: 20px 16px; }
@@ -980,7 +981,7 @@
 <!-- NAV -->
 <nav>
   <div class="nav-logo" onclick="showPage('home')" style="cursor:pointer;display:flex;align-items:center;gap:10px">
-    <svg width="30" height="30" viewBox="0 0 32 32" fill="none" style="flex-shrink:0"><circle cx="16" cy="16" r="16" fill="#1a3a1a"/><clipPath id="nl"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#nl)"><rect x="0" y="0" width="8" height="32" fill="#2dba60"/><rect x="10" y="0" width="8" height="32" fill="#2dba60" opacity="0.6"/><rect x="20" y="0" width="8" height="32" fill="#2dba60" opacity="0.3"/><rect x="0" y="22" width="32" height="4" fill="#e8ff5a"/></g></svg>
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none" style="flex-shrink:0"><circle cx="16" cy="16" r="16" fill="#1a3a1a"/><clipPath id="navcp"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#navcp)"><rect x="0" y="0" width="8" height="32" fill="#2dba60"/><rect x="10" y="0" width="8" height="32" fill="#2dba60" opacity="0.6"/><rect x="20" y="0" width="8" height="32" fill="#2dba60" opacity="0.3"/><rect x="0" y="22" width="32" height="4" fill="#e8ff5a"/></g></svg>
     <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;color:var(--green-deep)">Neat <span style="color:var(--green-bright)">Green</span></span>
   </div>
   <div class="nav-tabs">
@@ -1038,13 +1039,13 @@
           <div style="flex:1">
             <div style="font-weight:700;color:var(--green-deep);margin-bottom:6px;font-size:15px">Enter your address</div>
             <div style="font-size:13px;color:var(--ink-light);margin-bottom:10px">Search by name, street or postcode</div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
               <input type="text" id="hero-addr-input" placeholder="Address or postcode..."
                 onkeydown="if(event.key==='Enter') heroLookup()"
                 style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;
-                font-family:'Inter',sans-serif;font-size:14px;outline:none;background:var(--cream);color:var(--ink)">
+                font-family:'Inter',sans-serif;font-size:16px;outline:none;background:var(--cream);color:var(--ink)">
               <button onclick="heroLookup()" style="padding:10px 14px;background:var(--green-deep);
-                color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap">
+                color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0">
                 Find →
               </button>
             </div>
@@ -1196,7 +1197,7 @@
       <div class="step-title">Where is your garden?</div>
       <div class="form-group">
         <label class="form-label">Your postcode</label>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <input type="text" class="form-input" id="postcode-input"
             placeholder="e.g. EX20 3RA"
             onkeydown="if(event.key==='Enter') lookupPostcode()"
